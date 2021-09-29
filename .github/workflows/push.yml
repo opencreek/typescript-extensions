@@ -41,6 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-node@main
+      - run: git fetch --tags
       - uses: actions/cache@main
         id: cache-modules
         with:
