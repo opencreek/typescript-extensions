@@ -2,6 +2,7 @@
   "name": "@opencreek/ext",
   "version": "1.0.0",
   "description": "",
+  "main": "build/index.js",
   "files": [
     "build/**",
     "src/**"
@@ -12,7 +13,7 @@
     "lint:fix": "prettier --write . && eslint --cache --max-warnings=0 --fix .",
     "build": "tsc"
   },
-  "author": "opencreek",
+  "author": "Opencreek Technology<oss@opencreek.tech>",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"
