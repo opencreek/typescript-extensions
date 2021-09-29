@@ -1,0 +1,60 @@
+name: On Push
+
+on: [push]
+
+jobs:
+  audit:
+    name: Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions/setup-node@main
+      - run: npm audit
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions/setup-node@main
+      - uses: actions/cache@main
+        id: cache-modules
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
+      - uses: actions/cache@main
+        if: steps.cache-modules.outputs.cache-hit != 'true'
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-global
+      - run: npm ci
+        if: steps.cache-modules.outputs.cache-hit != 'true'
+        env:
+          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+      - run: npm run test
+      - run: npm run build
+
+  publish-gpr:
+    needs: test
+    runs-on: ubuntu-latest
+    if: "contains(github.ref, 'main') && !contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions/setup-node@main
+      - uses: actions/cache@main
+        id: cache-modules
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
+      - uses: actions/cache@main
+        if: steps.cache-modules.outputs.cache-hit != 'true'
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-global
+      - run: npm ci
+        if: steps.cache-modules.outputs.cache-hit != 'true'
+        env:
+          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+      - run: npm run build
+      - run: npx auto shipit
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

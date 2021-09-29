@@ -1,0 +1,33 @@
+{
+  "name": "@opencreek/ext",
+  "version": "1.0.0",
+  "description": "",
+  "files": [
+    "build/**",
+    "src/**"
+  ],
+  "scripts": {
+    "test": "true",
+    "lint": "prettier --check . && eslint --cache --max-warnings=0 .",
+    "lint:fix": "prettier --write . && eslint --cache --max-warnings=0 --fix .",
+    "build": "tsc"
+  },
+  "author": "opencreek",
+  "repository": {
+    "type": "git",
+    "url": "github:opencreek/typescript-extensions"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "4.25.0",
+    "@typescript-eslint/parser": "4.25.0",
+    "auto": "10.29.2",
+    "eslint": "7.27.0",
+    "eslint-config-prettier": "8.3.0",
+    "prettier": "2.3.0",
+    "typescript": "4.2.4"
+  },
+  "prettier": {
+    "semi": false
+  }
+}
