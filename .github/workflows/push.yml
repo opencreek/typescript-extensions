@@ -34,6 +34,7 @@ jobs:
       - run: npm run build
 
   publish-gpr:
+    name: Publish Version
     needs: test
     runs-on: ubuntu-latest
     if: "contains(github.ref, 'main') && !contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
