@@ -4,7 +4,7 @@ import { apply, extendProtoype } from "./extendPrototype"
 type Collections = typeof collections
 
 function filterNotNullish<T>(this: Array<T>): Array<NonNullable<T>> {
-  return this.filter((it): it is NonNullable<T> => it != undefined)
+  return this.filter((it): it is NonNullable<T> => it != null)
 }
 
 function extendArray<
