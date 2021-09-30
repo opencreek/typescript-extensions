@@ -14,6 +14,7 @@ jobs:
       - run: npx auto pr-check --url https://github.com/$GITHUB_REPOSITORY
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-canary:
     name: Publish a Canary version
@@ -41,3 +42,4 @@ jobs:
       - run: npx auto shipit
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

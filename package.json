@@ -34,5 +34,8 @@
   },
   "prettier": {
     "semi": false
+  },
+  "dependencies": {
+    "@opencreek/deno-std-collections": "^0.109.0"
   }
 }

@@ -8,5 +8,5 @@
  * @param error
  */
 export function raise(error: Error): never {
-    throw error
+  throw error
 }
