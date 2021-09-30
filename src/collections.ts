@@ -3,6 +3,10 @@ import { apply, extendProtoype } from "./extendPrototype"
 
 type Collections = typeof collections
 
+function filterNotNullish<T>(this: Array<T>): Array<NonNullable<T>> {
+  return this.filter((it): it is NonNullable<T> => it != undefined)
+}
+
 function extendArray<
   KEY extends {
     [P in keyof Collections]: Collections[P] extends (
@@ -15,6 +19,8 @@ function extendArray<
 >(key: KEY): void {
   extendProtoype(Array, apply(collections[key]), key)
 }
+
+extendProtoype(Array, filterNotNullish, "filterNotNullish")
 
 extendArray("associateBy")
 extendArray("associateWith")
@@ -53,18 +59,18 @@ extendArray("zip")
 
 type PairSplit<T> = T extends [infer F, infer L] ? [F[], L[]] : never
 
-declare global {
-  interface Array<T extends string> {
-    associateWith<U>(selector: (key: string) => U): Record<string, U>
-  }
+type StringArrayRecord<T, U> = T extends string ? Record<string, U> : never
 
+declare global {
   interface Array<T> {
     associateBy(selector: (el: T) => string): Record<string, T>
+    associateWith<U>(selector: (key: string) => U): StringArrayRecord<T, U>
     chunk(size: number): T[][]
     distinct(): T[]
     distinctBy<D>(selector: (el: T) => D): T[]
     dropLastWhile(predicate: (el: T) => boolean): T[]
     dropWhile(predicate: (el: T) => boolean): T[]
+    filterNotNullish(): Array<NonNullable<T>>
     findLast(predicate: (el: T) => boolean): T | undefined
     findLastIndex(predicate: (el: T) => boolean): number | undefined
     findSingle(predicate: (el: T) => boolean): T | undefined
