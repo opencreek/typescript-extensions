@@ -80,20 +80,10 @@ declare global {
     groupBy(selector: (el: T) => string): Record<string, T[]>
     intersect(...arrays: (readonly T[])[]): T[]
     mapNotNullish<O>(transformer: (el: T) => O): NonNullable<O>[]
-    maxBy(
-      selector:
-        | ((el: T) => number)
-        | ((el: T) => string)
-        | ((el: T) => bigint)
-        | ((el: T) => Date)
-    ): T | undefined
     maxBy(selector: (el: T) => string): T | undefined
     maxBy(selector: (el: T) => bigint): T | undefined
     maxBy(selector: (el: T) => number): T | undefined
     maxBy(selector: (el: T) => Date): T | undefined
-    maxOf<S extends ((el: T) => number) | ((el: T) => bigint)>(
-      selector: S
-    ): ReturnType<S> | undefined
     maxOf(selector: (el: T) => bigint): bigint | undefined
     maxOf(selector: (el: T) => number): number | undefined
     maxWith(comparator: (a: T, b: T) => number): T | undefined
@@ -101,17 +91,7 @@ declare global {
     minBy(selector: (el: T) => string): T | undefined
     minBy(selector: (el: T) => bigint): T | undefined
     minBy(selector: (el: T) => Date): T | undefined
-    minBy(
-      selector:
-        | ((el: T) => number)
-        | ((el: T) => string)
-        | ((el: T) => bigint)
-        | ((el: T) => Date)
-    ): T | undefined
     minOf(selector: (el: T) => bigint): bigint | undefined
-    minOf<S extends ((el: T) => number) | ((el: T) => bigint)>(
-      selector: S
-    ): ReturnType<S> | undefined
     minOf(selector: (el: T) => number): number | undefined
     minWith(comparator: (a: T, b: T) => number): T | undefined
     partition(predicate: (el: T) => boolean): [T[], T[]]
@@ -125,13 +105,6 @@ declare global {
       size: number,
       { step, partial }: { step: number; partial: boolean }
     ): T[][]
-    sortBy(
-      selector:
-        | ((el: T) => number)
-        | ((el: T) => string)
-        | ((el: T) => bigint)
-        | ((el: T) => Date)
-    ): T[]
     sortBy(selector: (el: T) => Date): T[]
     sortBy(selector: (el: T) => bigint): T[]
     sortBy(selector: (el: T) => string): T[]
