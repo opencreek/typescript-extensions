@@ -77,7 +77,7 @@ declare global {
     firstNotNullishOf<O>(
       selector: (item: T) => O | undefined | null
     ): NonNullable<O> | undefined
-    groupBy(selector: (el: T) => string): Record<string, T[]>
+    groupBy<Key extends string>(selector: (el: T) => Key): Record<Key, T[]>
     intersect(...arrays: (readonly T[])[]): T[]
     mapNotNullish<O>(transformer: (el: T) => O): NonNullable<O>[]
     maxBy(selector: (el: T) => string): T | undefined
@@ -132,7 +132,7 @@ declare global {
     firstNotNullishOf<O>(
       selector: (item: T) => O | undefined | null
     ): NonNullable<O> | undefined
-    groupBy(selector: (el: T) => string): Record<string, T[]>
+    groupBy<Key extends string>(selector: (el: T) => Key): Record<Key, T[]>
     intersect(...arrays: (readonly T[])[]): T[]
     mapNotNullish<O>(transformer: (el: T) => O): NonNullable<O>[]
     maxBy(selector: (el: T) => string): T | undefined
