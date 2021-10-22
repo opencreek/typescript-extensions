@@ -1,3 +1,15 @@
+# v1.2.0 (Fri Oct 22 2021)
+
+#### 🚀 Enhancement
+
+- :bug: Add ReadonlyArray extension types [#4](https://github.com/opencreek/typescript-extensions/pull/4) ([@reckter](https://github.com/reckter))
+
+#### Authors: 1
+
+- Hannes Güdelhöfer ([@reckter](https://github.com/reckter))
+
+---
+
 # v1.1.0 (Thu Sep 30 2021)
 
 #### 🚀 Enhancement
