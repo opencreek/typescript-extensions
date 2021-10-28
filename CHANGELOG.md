@@ -1,3 +1,15 @@
+# v1.3.0 (Thu Oct 28 2021)
+
+#### 🚀 Enhancement
+
+- Add TODO function to designate unfinished code paths [#5](https://github.com/opencreek/typescript-extensions/pull/5) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v1.2.0 (Fri Oct 22 2021)
 
 #### 🚀 Enhancement
