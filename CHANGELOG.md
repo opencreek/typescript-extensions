@@ -1,3 +1,15 @@
+# v1.4.0 (Fri Oct 29 2021)
+
+#### 🚀 Enhancement
+
+- :sparkles: Add mapValues for objects [#6](https://github.com/opencreek/typescript-extensions/pull/6) ([@reckter](https://github.com/reckter))
+
+#### Authors: 1
+
+- Hannes Güdelhöfer ([@reckter](https://github.com/reckter))
+
+---
+
 # v1.3.0 (Thu Oct 28 2021)
 
 #### 🚀 Enhancement
