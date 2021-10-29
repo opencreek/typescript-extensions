@@ -1,3 +1,4 @@
+import { mapValues } from "@opencreek/deno-std-collections"
 import { extendProtoype } from "./extendPrototype"
 
 function mapThis<T, V>(
@@ -26,6 +27,7 @@ function takeUnless<T>(
 extendProtoype(Object, takeIf, "takeIf")
 extendProtoype(Object, takeUnless, "takeUnless")
 extendProtoype(Object, mapThis, "mapThis")
+extendProtoype(Object, mapValues, "mapValues")
 
 declare global {
   interface Object {
@@ -40,5 +42,7 @@ declare global {
       this: NonNullable<T>,
       predicate: (thiz: NonNullable<T>) => boolean
     ): T | undefined
+
+    mapValues<T, Key extends keyof T, O>(thiz: Readonly<Record<Key, T>>, transformer: (value: T) => O): Record<Key, O>;
   }
 }
