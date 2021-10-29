@@ -1,5 +1,5 @@
 import { mapValues } from "@opencreek/deno-std-collections"
-import { extendProtoype } from "./extendPrototype"
+import { apply, extendProtoype } from "./extendPrototype"
 
 function mapThis<T, V>(
   this: NonNullable<T>,
@@ -27,7 +27,7 @@ function takeUnless<T>(
 extendProtoype(Object, takeIf, "takeIf")
 extendProtoype(Object, takeUnless, "takeUnless")
 extendProtoype(Object, mapThis, "mapThis")
-extendProtoype(Object, mapValues, "mapValues")
+extendProtoype(Object, apply(mapValues), "mapValues")
 
 declare global {
   interface Object {
