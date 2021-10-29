@@ -44,7 +44,7 @@ declare global {
     ): T | undefined
 
     mapValues<T, Key extends keyof T, O>(
-      thiz: Readonly<Record<Key, T>>,
+      this: Readonly<Record<Key, T>>,
       transformer: (value: T) => O
     ): Record<Key, O>
   }
