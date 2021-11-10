@@ -1,3 +1,15 @@
+# v1.5.0 (Wed Nov 10 2021)
+
+#### 🚀 Enhancement
+
+- :sparkles: Add overloads for minOf [#7](https://github.com/opencreek/typescript-extensions/pull/7) ([@LionC](https://github.com/LionC))
+
+#### Authors: 1
+
+- Leon Strauss ([@LionC](https://github.com/LionC))
+
+---
+
 # v1.4.0 (Fri Oct 29 2021)
 
 #### 🚀 Enhancement
