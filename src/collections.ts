@@ -86,6 +86,8 @@ declare global {
     maxBy(selector: (el: T) => Date): T | undefined
     maxOf(selector: (el: T) => bigint): bigint | undefined
     maxOf(selector: (el: T) => number): number | undefined
+    maxOf(selector: (el: T) => string): string | undefined
+    maxOf(selector: (el: T) => Date): Date | undefined
     maxWith(comparator: (a: T, b: T) => number): T | undefined
     minBy(selector: (el: T) => number): T | undefined
     minBy(selector: (el: T) => string): T | undefined
@@ -143,6 +145,8 @@ declare global {
     maxBy(selector: (el: T) => Date): T | undefined
     maxOf(selector: (el: T) => bigint): bigint | undefined
     maxOf(selector: (el: T) => number): number | undefined
+    maxOf(selector: (el: T) => string): string | undefined
+    maxOf(selector: (el: T) => Date): Date | undefined
     maxWith(comparator: (a: T, b: T) => number): T | undefined
     minBy(selector: (el: T) => number): T | undefined
     minBy(selector: (el: T) => string): T | undefined
