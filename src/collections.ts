@@ -93,6 +93,8 @@ declare global {
     minBy(selector: (el: T) => Date): T | undefined
     minOf(selector: (el: T) => bigint): bigint | undefined
     minOf(selector: (el: T) => number): number | undefined
+    minOf(selector: (el: T) => string): string | undefined
+    minOf(selector: (el: T) => Date): Date | undefined
     minWith(comparator: (a: T, b: T) => number): T | undefined
     partition(predicate: (el: T) => boolean): [T[], T[]]
     permutations(): T[][]
