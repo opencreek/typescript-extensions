@@ -1,3 +1,15 @@
+# v1.5.1 (Wed Nov 10 2021)
+
+#### 🐛 Bug Fix
+
+- :bug: Add missing overloads in Array interface [#8](https://github.com/opencreek/typescript-extensions/pull/8) ([@LionC](https://github.com/LionC))
+
+#### Authors: 1
+
+- Leon Strauss ([@LionC](https://github.com/LionC))
+
+---
+
 # v1.5.0 (Wed Nov 10 2021)
 
 #### 🚀 Enhancement
