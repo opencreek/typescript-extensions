@@ -1,3 +1,15 @@
+# v1.5.2 (Wed Nov 10 2021)
+
+#### 🐛 Bug Fix
+
+- :sparkles: Add maxOf overloads [#9](https://github.com/opencreek/typescript-extensions/pull/9) ([@LionC](https://github.com/LionC))
+
+#### Authors: 1
+
+- Leon Strauss ([@LionC](https://github.com/LionC))
+
+---
+
 # v1.5.1 (Wed Nov 10 2021)
 
 #### 🐛 Bug Fix
