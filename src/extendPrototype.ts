@@ -12,6 +12,19 @@ export function extendProtoype(
   }
 }
 
+export function extendPrototypeWithName<T extends Record<string, Function>>(
+  target: Function,
+  wrap: T
+): void {
+  const keys = Object.keys(wrap)
+  if (keys.length !== 1) {
+    throw Error("You must give extendPrototypeWithName an object with one key")
+  }
+  const name = keys[0]
+
+  extendProtoype(target, wrap[name], name)
+}
+
 type ThisFunction<F extends (...args: any) => any> = (
   this: FirstParameter<F>,
   ...args: SkipFirstParameter<F>
