@@ -9,19 +9,19 @@ function filterNotNullish<T>(this: Array<T>): Array<NonNullable<T>> {
 }
 
 async function mapAsync<T, U>(
-    this: Array<T>,
-    f: (e: T, index: number, array: Array<T>) => Promise<U>
+  this: Array<T>,
+  f: (e: T, index: number, array: Array<T>) => Promise<U>
 ): Promise<Array<U>> {
-    return Promise.all(this.map(f))
+  return Promise.all(this.map(f))
 }
 
 async function filterAsync<T>(
   this: Array<T>,
   f: (e: T, index: number, array: Array<T>) => Promise<boolean>
 ): Promise<Array<T>> {
-    const includes = await this.mapAsync(f)
+  const includes = await this.mapAsync(f)
 
-    return this.filter((_, index) => includes[index])
+  return this.filter((_, index) => includes[index])
 }
 
 function extendArray<
@@ -89,7 +89,9 @@ declare global {
     distinctBy<D>(selector: (el: T) => D): T[]
     dropLastWhile(predicate: (el: T) => boolean): T[]
     dropWhile(predicate: (el: T) => boolean): T[]
-    filterAsync(predicate: (el: T, index: number, array: Array<T>) => Promise<boolean>): Promise<Array<T>>
+    filterAsync(
+      predicate: (el: T, index: number, array: Array<T>) => Promise<boolean>
+    ): Promise<Array<T>>
     filterNotNullish(): Array<NonNullable<T>>
     findLast(predicate: (el: T) => boolean): T | undefined
     findLastIndex(predicate: (el: T) => boolean): number | undefined
@@ -99,7 +101,9 @@ declare global {
     ): NonNullable<O> | undefined
     groupBy<Key extends string>(selector: (el: T) => Key): Record<Key, T[]>
     intersect(...arrays: (readonly T[])[]): T[]
-    mapAsync<U>(transformer: (el: T, index: number, array: Array<T>) => Promise<U>): Promise<Array<U>>
+    mapAsync<U>(
+      transformer: (el: T, index: number, array: Array<T>) => Promise<U>
+    ): Promise<Array<U>>
     mapNotNullish<O>(transformer: (el: T) => O): NonNullable<O>[]
     maxBy(selector: (el: T) => string): T | undefined
     maxBy(selector: (el: T) => bigint): T | undefined
@@ -150,7 +154,9 @@ declare global {
     distinctBy<D>(selector: (el: T) => D): T[]
     dropLastWhile(predicate: (el: T) => boolean): T[]
     dropWhile(predicate: (el: T) => boolean): T[]
-    filterAsync(predicate: (el: T, index: number, array: Array<T>) => Promise<boolean>): Promise<Array<T>>
+    filterAsync(
+      predicate: (el: T, index: number, array: Array<T>) => Promise<boolean>
+    ): Promise<Array<T>>
     filterNotNullish(): Array<NonNullable<T>>
     findLast(predicate: (el: T) => boolean): T | undefined
     findLastIndex(predicate: (el: T) => boolean): number | undefined
@@ -160,7 +166,9 @@ declare global {
     ): NonNullable<O> | undefined
     groupBy<Key extends string>(selector: (el: T) => Key): Record<Key, T[]>
     intersect(...arrays: (readonly T[])[]): T[]
-    mapAsync<U>(transformer: (el: T, index: number, array: Array<T>) => Promise<U>): Promise<Array<U>>
+    mapAsync<U>(
+      transformer: (el: T, index: number, array: Array<T>) => Promise<U>
+    ): Promise<Array<U>>
     mapNotNullish<O>(transformer: (el: T) => O): NonNullable<O>[]
     maxBy(selector: (el: T) => string): T | undefined
     maxBy(selector: (el: T) => bigint): T | undefined
