@@ -16,7 +16,11 @@ export function extendPrototypeWithName<T extends Record<string, Function>>(
     target: Function,
     wrap: T
 ): void {
-    const name = Object.keys(wrap)[0]
+    const keys = Object.keys(wrap)
+    if (keys.length != 1) {
+        throw Error("You must give extendPrototypeWithName an object with one key")
+    }
+    const name = keys[0]
 
     extendProtoype(target, wrap[name], name)
 }
