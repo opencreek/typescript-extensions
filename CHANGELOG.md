@@ -1,3 +1,15 @@
+# v1.6.0 (Fri Dec 17 2021)
+
+#### 🚀 Enhancement
+
+- Add mapAsync and filterAsync [#10](https://github.com/opencreek/typescript-extensions/pull/10) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v1.5.2 (Wed Nov 10 2021)
 
 #### 🐛 Bug Fix
