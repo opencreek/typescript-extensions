@@ -1,5 +1,4 @@
 import test from "ava"
-import { cwd } from "process"
 import { tableToString } from "./table"
 
 test("table should format correctly", (t) => {
