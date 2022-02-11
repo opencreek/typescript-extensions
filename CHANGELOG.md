@@ -1,3 +1,15 @@
+# v1.7.0 (Fri Feb 11 2022)
+
+#### 🚀 Enhancement
+
+- Add sleep, range, tables [#12](https://github.com/opencreek/typescript-extensions/pull/12) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v1.6.0 (Fri Dec 17 2021)
 
 #### 🚀 Enhancement
