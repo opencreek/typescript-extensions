@@ -39,8 +39,8 @@ export class StopWatch {
   }
 
   toString(): string {
-    return tableToString(
-      this.tasks
+    const table = [
+      ...this.tasks
         .filter((it) => it.elapsed !== undefined)
         .map((it) => {
           return {
@@ -48,7 +48,11 @@ export class StopWatch {
             elapsed: it.elapsed + "ms",
           }
         }),
-      ["name", "elapsed"]
-    )
+      {
+        name: "Total",
+        elapsed: this.tasks.sumOf((it) => it.elapsed ?? 0) + "ms",
+      },
+    ]
+    return tableToString(table, ["name", "elapsed"])
   }
 }
