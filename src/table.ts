@@ -16,6 +16,23 @@ function tableRow<T extends Record<string | number | symbol, unknown>>(
   )
 }
 
+/**
+ * tableToString will convert an array of records into a nicely formatted tableRow
+ *
+ * Example:
+ *
+ * Input: [ { key: "value", foo: "bar" }, { key: "other value", foo: "other bar" } ]
+ *
+ *  -------------------------
+ * | key         | foo       |
+ *  -------------------------
+ * | value       | bar       |
+ * | other value | other bar |
+ *  -------------------------
+ *
+ * @param table    the table as an array of records
+ * @param columns  keys of the record that will be included in the table
+ */
 export function tableToString<
   T extends Record<string | number | symbol, unknown>
 >(table: Array<T>, columns: Array<keyof T>): string {
