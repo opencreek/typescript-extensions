@@ -1,3 +1,15 @@
+# v1.8.0 (Fri Feb 11 2022)
+
+#### 🚀 Enhancement
+
+- Add StopWatch [#13](https://github.com/opencreek/typescript-extensions/pull/13) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v1.7.0 (Fri Feb 11 2022)
 
 #### 🚀 Enhancement
