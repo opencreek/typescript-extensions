@@ -1,3 +1,15 @@
+# v1.8.1 (Fri Feb 11 2022)
+
+#### 🐛 Bug Fix
+
+- Export StopWatch in index [#14](https://github.com/opencreek/typescript-extensions/pull/14) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v1.8.0 (Fri Feb 11 2022)
 
 #### 🚀 Enhancement
