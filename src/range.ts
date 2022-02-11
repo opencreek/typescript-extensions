@@ -5,8 +5,7 @@
  * @param step  step between entries
  */
 export function range(start: number, end: number, step = 1): Array<number> {
-  const length = (end - start) / step + 1
-  const ret = Array(Math.floor(length))
+  const ret = []
 
   let i = 0
   for (let n = start; n < end; n += step) {
