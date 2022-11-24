@@ -38,6 +38,10 @@ export class StopWatch {
     }
   }
 
+  getTotalElapsedTimeInMs(): number {
+    return this.tasks.sumOf((it) => it.elapsed ?? 0)
+  }
+
   toString(): string {
     const table = [
       ...this.tasks
@@ -50,7 +54,7 @@ export class StopWatch {
         }),
       {
         name: "Total",
-        elapsed: this.tasks.sumOf((it) => it.elapsed ?? 0) + "ms",
+        elapsed: this.getTotalElapsedTimeInMs() + "ms",
       },
     ]
     return tableToString(table, ["name", "elapsed"])
