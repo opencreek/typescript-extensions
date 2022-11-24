@@ -1,3 +1,15 @@
+# v1.9.0 (Thu Nov 24 2022)
+
+#### 🚀 Enhancement
+
+- Add total to stopwatch [#15](https://github.com/opencreek/typescript-extensions/pull/15) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v1.8.1 (Fri Feb 11 2022)
 
 #### 🐛 Bug Fix
