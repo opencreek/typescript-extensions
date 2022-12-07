@@ -1,3 +1,15 @@
+# v1.10.0 (Wed Dec 07 2022)
+
+#### 🚀 Enhancement
+
+- Add string formatting function [#19](https://github.com/opencreek/typescript-extensions/pull/19) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v1.9.0 (Thu Nov 24 2022)
 
 #### 🚀 Enhancement
