@@ -1,4 +1,5 @@
 import { tableToString } from "./table"
+import { sumOf } from "./collections"
 
 type Task = {
   name: string
@@ -39,7 +40,7 @@ export class StopWatch {
   }
 
   getTotalElapsedTimeInMs(): number {
-    return this.tasks.sumOf((it) => it.elapsed ?? 0)
+    return sumOf(this.tasks, (it) => it.elapsed ?? 0)
   }
 
   toString(): string {

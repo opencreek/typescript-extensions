@@ -1,5 +1,5 @@
 import { range } from "./range"
-import "./collections"
+import { sumOf } from "./collections"
 
 function tableRow<T extends Record<string | number | symbol, unknown>>(
   row: T,
@@ -47,7 +47,7 @@ export function tableToString<
 
   const border =
     " " +
-    range(0, columnLengths.sumOf((it) => it + 1) + 1)
+    range(0, sumOf(columnLengths, (it) => it + 1) + 1)
       .map((_) => "-")
       .join("")
 
