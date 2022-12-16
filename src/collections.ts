@@ -237,12 +237,12 @@ export class Chain<T> {
     return this.val[0]
   }
 
-  filter(
-    filter: (el: T, index: number, array: ReadonlyArray<T>) => boolean
-  ): Chain<T>
   filter<S extends T>(
     filter: (el: T, index: number, array: ReadonlyArray<T>) => el is S
   ): Chain<S>
+  filter(
+    filter: (el: T, index: number, array: ReadonlyArray<T>) => boolean
+  ): Chain<T>
   filter(
     filter: (el: T, index: number, array: ReadonlyArray<T>) => boolean
   ): Chain<T> {
