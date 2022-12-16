@@ -313,9 +313,18 @@ export class Chain<T> {
   }
 
   flatMap<U>(
-    transformer: (el: T, index: number, array: ReadonlyArray<T>) => Chain<U>
+    transformer: (
+      el: T,
+      index: number,
+      array: ReadonlyArray<T>
+    ) => Chain<U> | ReadonlyArray<U>
   ): Chain<U> {
-    return this.map(transformer).flatten()
+    const ret = this.val.flatMap((el, index, arr) => {
+      const mapped = transformer(el, index, arr)
+      if (mapped instanceof Chain) return mapped.value()
+      return mapped
+    })
+    return new Chain(ret)
   }
 
   forEach(
