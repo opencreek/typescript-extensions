@@ -270,7 +270,13 @@ export class Chain<T> {
 
   find<S extends T>(
     predicate: (el: T, index: number, array: ReadonlyArray<T>) => el is S
-  ): S | undefined {
+  ): S | undefined
+  find(
+    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean
+  ): T | undefined
+  find(
+    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean
+  ): T | undefined {
     return this.val.find(predicate)
   }
 
