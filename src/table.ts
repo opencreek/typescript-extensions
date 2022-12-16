@@ -1,5 +1,6 @@
 import { range } from "./range"
 import "./collections"
+import { chain } from "./collections"
 
 function tableRow<T extends Record<string | number | symbol, unknown>>(
   row: T,
@@ -45,9 +46,11 @@ export function tableToString<
     )
   })
 
+  const columnLength = chain(columnLengths).sumOf((it) => it + 1) + 1
+
   const border =
     " " +
-    range(0, columnLengths.sumOf((it) => it + 1) + 1)
+    range(0, columnLength)
       .map((_) => "-")
       .join("")
 
