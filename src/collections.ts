@@ -161,6 +161,10 @@ export class ObjectChain<K extends string | number | symbol, T> {
 export class Chain<T> {
   constructor(private val: ReadonlyArray<T>) {}
 
+  writableValue(): Array<T> {
+    return [...this.val]
+  }
+
   value(): ReadonlyArray<T> {
     return this.val
   }
@@ -233,6 +237,12 @@ export class Chain<T> {
     return this.val[0]
   }
 
+  filter(
+    filter: (el: T, index: number, array: ReadonlyArray<T>) => boolean
+  ): Chain<T>
+  filter<S extends T>(
+    filter: (el: T, index: number, array: ReadonlyArray<T>) => el is S
+  ): Chain<S>
   filter(
     filter: (el: T, index: number, array: ReadonlyArray<T>) => boolean
   ): Chain<T> {
