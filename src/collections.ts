@@ -102,6 +102,9 @@ export class ObjectChain<K extends string | number | symbol, T> {
   values(): Chain<T> {
     return new Chain(Object.values(this.val))
   }
+  entries(): Chain<[K, T]> {
+    return new Chain(Object.entries(this.val) as Array<[K, T]>)
+  }
 
   mapKeys<U extends string | number | symbol>(
     transformer: (key: K) => U
