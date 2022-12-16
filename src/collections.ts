@@ -37,7 +37,27 @@ type FlattenChain<T> = T extends Chain<infer U> ? Chain<U> : never
 
 export function objChain<K extends string | number | symbol, T>(
   value: Record<K, T> | ObjectChain<K, T> | Chain<readonly [K, T]>
-): ObjectChain<K, T> {
+): ObjectChain<K, T>
+export function objChain<_K extends string | number | symbol, _T>(
+  value: undefined | null
+): undefined
+export function objChain<K extends string | number | symbol, T>(
+  value:
+    | Record<K, T>
+    | ObjectChain<K, T>
+    | Chain<readonly [K, T]>
+    | undefined
+    | null
+): ObjectChain<K, T> | undefined
+export function objChain<K extends string | number | symbol, T>(
+  value:
+    | Record<K, T>
+    | ObjectChain<K, T>
+    | Chain<readonly [K, T]>
+    | undefined
+    | null
+): ObjectChain<K, T> | undefined {
+  if (value == null) return undefined
   if (value instanceof ObjectChain) {
     return value
   }
@@ -54,7 +74,15 @@ export function objChain<K extends string | number | symbol, T>(
 
 export function chain<T>(
   value: ReadonlyArray<T> | Chain<T> | Iterable<T>
-): Chain<T> {
+): Chain<T>
+export function chain<_T>(value: undefined | null): undefined
+export function chain<T>(
+  value: ReadonlyArray<T> | Chain<T> | Iterable<T> | undefined | null
+): Chain<T> | undefined
+export function chain<T>(
+  value: ReadonlyArray<T> | Chain<T> | Iterable<T> | undefined | null
+): Chain<T> | undefined {
+  if (value == null) return undefined
   if (value instanceof Chain) return value
   if (Array.isArray(value)) return new Chain(value)
 
