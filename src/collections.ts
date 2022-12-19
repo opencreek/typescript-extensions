@@ -349,13 +349,15 @@ export class Chain<T> {
   }
 
   indexOf(searchElement: T, fromIndex?: number): number | undefined {
+    // fromIndex will be converted to 0, which is fine here
     const ret = this.val.indexOf(searchElement, fromIndex)
     if (ret === -1) return undefined
     return ret
   }
 
   lastIndexOf(searchElement: T, fromIndex?: number): number | undefined {
-    const ret = this.val.lastIndexOf(searchElement, fromIndex)
+    // fromIndex would be converted to 0, which is NOT fine here
+    const ret = this.val.lastIndexOf(searchElement, fromIndex ?? Infinity)
     if (ret === -1) return undefined
     return ret
   }
@@ -374,9 +376,10 @@ export class Chain<T> {
   }
 
   mapJoin(separator: string, transformer: (el: T) => string): string {
-    const mapped = this.map(transformer)
-
-    return mapped.join(separator)
+    return this.reduce((acc, it, idx) => {
+      const mapped = transformer(it)
+      return acc + (idx > 0 ? separator : "") + mapped
+    }, "")
   }
 
   last(): T {
