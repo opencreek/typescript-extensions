@@ -1,3 +1,15 @@
+# v2.0.0 (Tue Dec 20 2022)
+
+#### 💥 Breaking Change
+
+- Remove prototype pollution and instead use a Chain class [#22](https://github.com/opencreek/typescript-extensions/pull/22) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v1.10.1 (Wed Dec 07 2022)
 
 #### 🐛 Bug Fix
