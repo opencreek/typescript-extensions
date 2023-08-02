@@ -33,7 +33,11 @@ import { error } from "."
 type PairSplit<T> = T extends [infer F, infer L] ? [Chain<F>, Chain<L>] : never
 
 type IfString<T, U> = T extends string ? U : never
-type FlattenChain<T> = T extends Chain<infer U> ? Chain<U> : never
+type FlattenChain<T> = T extends Chain<infer U>
+  ? Chain<U>
+  : T extends Array<infer U>
+  ? Chain<U>
+  : never
 
 export function objChain<K extends string | number | symbol, T>(
   value: Record<K, T> | ObjectChain<K, T> | Chain<readonly [K, T]>
@@ -99,9 +103,11 @@ export class ObjectChain<K extends string | number | symbol, T> {
   keys(): Chain<K> {
     return new Chain(Object.keys(this.val)) as Chain<K>
   }
+
   values(): Chain<T> {
     return new Chain(Object.values(this.val))
   }
+
   entries(): Chain<[K, T]> {
     return new Chain(Object.entries(this.val) as Array<[K, T]>)
   }
@@ -116,6 +122,7 @@ export class ObjectChain<K extends string | number | symbol, T> {
 
     return new ObjectChain(Object.fromEntries(mapped))
   }
+
   mapValues<V>(transformer: (value: T) => V): ObjectChain<K, V> {
     const entries = Object.entries(this.val) as [K, T][]
     const mapped = entries.map(([k, v]) => {
@@ -124,6 +131,7 @@ export class ObjectChain<K extends string | number | symbol, T> {
 
     return new ObjectChain(Object.fromEntries(mapped))
   }
+
   mapEntries<U extends string | number | symbol, V>(
     transformer: (key: K, value: T) => [U, V]
   ): ObjectChain<U, V> {
@@ -143,6 +151,7 @@ export class ObjectChain<K extends string | number | symbol, T> {
 
     return new ObjectChain(Object.fromEntries(filtered)) as ObjectChain<K, T>
   }
+
   filterValues(filter: (value: T) => boolean): ObjectChain<K, T> {
     const entries = Object.entries(this.val) as [K, T][]
     const filtered = entries.filter(([_, v]) => {
@@ -151,6 +160,7 @@ export class ObjectChain<K extends string | number | symbol, T> {
 
     return new ObjectChain(Object.fromEntries(filtered)) as ObjectChain<K, T>
   }
+
   filterEntries(filter: (key: K, value: T) => boolean): ObjectChain<K, T> {
     const entries = Object.entries(this.val) as [K, T][]
     const filtered = entries.filter(([k, v]) => {
@@ -197,10 +207,12 @@ export class Chain<T> {
     const chunks = chunk(this.val, size)
     return new Chain(chunks)
   }
+
   distinct(): Chain<T> {
     const unique = distinct(this.val)
     return new Chain(unique)
   }
+
   distinctBy<D>(selector: (el: T) => D): Chain<T> {
     const unique = distinctBy(this.val, selector)
     return new Chain(unique)
@@ -210,6 +222,7 @@ export class Chain<T> {
     const dropped = dropLastWhile(this.val, predicate)
     return new Chain(dropped)
   }
+
   dropWhile(predicate: (el: T) => boolean): Chain<T> {
     const dropped = dropWhile(this.val, predicate)
     return new Chain(dropped)
@@ -236,6 +249,7 @@ export class Chain<T> {
   first(): T {
     return this.firstOrNull() ?? error("No first element found")
   }
+
   firstOrNull(): T | undefined {
     return this.val[0]
   }
@@ -291,6 +305,7 @@ export class Chain<T> {
   findLast(predicate: (el: T) => boolean): T | undefined {
     return findLast(this.val, predicate)
   }
+
   findLastIndex(predicate: (el: T) => boolean): number | undefined {
     return findLastIndex(this.val, predicate)
   }
@@ -307,7 +322,7 @@ export class Chain<T> {
 
   flatten(): FlattenChain<T> {
     const flattened = this.val.flatMap((it) =>
-      it instanceof Chain ? it.val : []
+      it instanceof Chain ? it.val : it
     )
     return new Chain(flattened) as FlattenChain<T>
   }
@@ -385,6 +400,7 @@ export class Chain<T> {
   last(): T {
     return this.lastOrNull() ?? error("No last element found")
   }
+
   lastOrNull(): T | undefined {
     const last = this.val[this.val.length - 1]
     return last
@@ -433,9 +449,11 @@ export class Chain<T> {
     }
     return max
   }
+
   maxWith(comparator: (a: T, b: T) => number): T | undefined {
     return maxWith(this.val, comparator)
   }
+
   minBy(selector: (el: T) => number): T | undefined
   minBy(selector: (el: T) => string): T | undefined
   minBy(selector: (el: T) => bigint): T | undefined
@@ -444,6 +462,7 @@ export class Chain<T> {
     // this is save because minBy is overloaded too
     return minBy(this.val, selector as (el: T) => string)
   }
+
   minOf(selector: (el: T) => bigint): bigint | undefined
   minOf(selector: (el: T) => number): number | undefined
   minOf(selector: (el: T) => string): string | undefined
@@ -459,6 +478,7 @@ export class Chain<T> {
     }
     return min
   }
+
   minWith(comparator: (a: T, b: T) => number): T | undefined {
     return minWith(this.val, comparator)
   }
@@ -468,6 +488,7 @@ export class Chain<T> {
 
     return [new Chain(left), new Chain(right)]
   }
+
   permutations(): Chain<T[]> {
     return new Chain(permutations(this.val))
   }
@@ -581,6 +602,7 @@ export class Chain<T> {
   sort(compareFn?: (a: T, b: T) => number): Chain<T> {
     return new Chain([...this.val].sort(compareFn))
   }
+
   sortBy(selector: (el: T) => Date): Chain<T>
   sortBy(selector: (el: T) => bigint): Chain<T>
   sortBy(selector: (el: T) => string): Chain<T>
@@ -598,6 +620,7 @@ export class Chain<T> {
   takeLastWhile(predicate: (el: T) => boolean): Chain<T> {
     return new Chain(takeLastWhile(this.val, predicate))
   }
+
   takeWhile(predicate: (el: T) => boolean): Chain<T> {
     return new Chain(takeWhile(this.val, predicate))
   }
@@ -605,14 +628,17 @@ export class Chain<T> {
   union(...arrays: (readonly T[])[]): Chain<T> {
     return new Chain(union(this.val, ...arrays))
   }
+
   unzip(): PairSplit<T> {
     const [left, right] = unzip(this.val as unknown as ReadonlyArray<[T, T]>)
     return [new Chain(left), new Chain(right)] as PairSplit<T>
   }
+
   withoutAll(values: readonly T[]): Chain<T> {
     const ret = withoutAll(this.val, values)
     return new Chain(ret)
   }
+
   zip<U>(withArray: readonly U[]): Chain<[T, U]> {
     return new Chain(zip(this.val, withArray))
   }

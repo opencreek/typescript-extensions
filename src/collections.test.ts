@@ -123,3 +123,11 @@ test("should minOf correctly", async (t) => {
     undefined
   )
 })
+
+test("should allow flattening on Chain<Array<T>>", (t) => {
+  const arr = [[1], [2, 3]]
+  const result = chain(arr).flatten().writableValue()
+
+  t.is(result.length, 3)
+  t.deepEqual(result, [1, 2, 3])
+})
