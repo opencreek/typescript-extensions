@@ -159,6 +159,10 @@ export class ObjectChain<K extends string | number | symbol, T> {
 
     return new ObjectChain(Object.fromEntries(filtered)) as ObjectChain<K, T>
   }
+
+  toObject(): Record<K, T> {
+    return this.val
+  }
 }
 
 export class Chain<T> {
