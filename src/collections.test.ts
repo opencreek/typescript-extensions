@@ -28,7 +28,7 @@ test("should findIndex correctly", (t) => {
 
   t.is(
     chain(arr).findIndex((n) => n === 5),
-    undefined
+    undefined,
   )
 })
 
@@ -109,7 +109,7 @@ test("should maxOf correctly", async (t) => {
 
   t.is(
     chain([]).maxOf((n) => n + 2),
-    undefined
+    undefined,
   )
 })
 
@@ -120,7 +120,7 @@ test("should minOf correctly", async (t) => {
 
   t.is(
     chain([]).minOf((n) => n + 2),
-    undefined
+    undefined,
   )
 })
 

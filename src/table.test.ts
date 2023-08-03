@@ -25,6 +25,6 @@ test("table should format correctly", (t) => {
 | short content | some really long content |
 | bbb           | a                        |
 | bla           | aiaiaiaiai               |
- ------------------------------------------`
+ ------------------------------------------`,
   )
 })

@@ -43,10 +43,10 @@ type FlattenChain<T> = Distribute<T> extends { type: ArrayOrChain<infer U> }
   : Chain<T>
 
 export function objChain<K extends string | number | symbol, T>(
-  value: Record<K, T> | ObjectChain<K, T> | Chain<readonly [K, T]>
+  value: Record<K, T> | ObjectChain<K, T> | Chain<readonly [K, T]>,
 ): ObjectChain<K, T>
 export function objChain<_K extends string | number | symbol, _T>(
-  value: undefined | null
+  value: undefined | null,
 ): undefined
 export function objChain<K extends string | number | symbol, T>(
   value:
@@ -54,7 +54,7 @@ export function objChain<K extends string | number | symbol, T>(
     | ObjectChain<K, T>
     | Chain<readonly [K, T]>
     | undefined
-    | null
+    | null,
 ): ObjectChain<K, T> | undefined
 export function objChain<K extends string | number | symbol, T>(
   value:
@@ -62,7 +62,7 @@ export function objChain<K extends string | number | symbol, T>(
     | ObjectChain<K, T>
     | Chain<readonly [K, T]>
     | undefined
-    | null
+    | null,
 ): ObjectChain<K, T> | undefined {
   if (value == null) return undefined
   if (value instanceof ObjectChain) {
@@ -80,14 +80,14 @@ export function objChain<K extends string | number | symbol, T>(
 }
 
 export function chain<T>(
-  value: ReadonlyArray<T> | Chain<T> | Iterable<T>
+  value: ReadonlyArray<T> | Chain<T> | Iterable<T>,
 ): Chain<T>
 export function chain<_T>(value: undefined | null): undefined
 export function chain<T>(
-  value: ReadonlyArray<T> | Chain<T> | Iterable<T> | undefined | null
+  value: ReadonlyArray<T> | Chain<T> | Iterable<T> | undefined | null,
 ): Chain<T> | undefined
 export function chain<T>(
-  value: ReadonlyArray<T> | Chain<T> | Iterable<T> | undefined | null
+  value: ReadonlyArray<T> | Chain<T> | Iterable<T> | undefined | null,
 ): Chain<T> | undefined {
   if (value == null) return undefined
   if (value instanceof Chain) return value
@@ -116,7 +116,7 @@ export class ObjectChain<K extends string | number | symbol, T> {
   }
 
   mapKeys<U extends string | number | symbol>(
-    transformer: (key: K) => U
+    transformer: (key: K) => U,
   ): ObjectChain<U, T> {
     const entries = Object.entries(this.val) as [K, T][]
     const mapped = entries.map(([k, v]) => {
@@ -136,7 +136,7 @@ export class ObjectChain<K extends string | number | symbol, T> {
   }
 
   mapEntries<U extends string | number | symbol, V>(
-    transformer: (key: K, value: T) => [U, V]
+    transformer: (key: K, value: T) => [U, V],
   ): ObjectChain<U, V> {
     const entries = Object.entries(this.val) as [K, T][]
     const mapped = entries.map(([k, v]) => {
@@ -186,7 +186,7 @@ export class Chain<T> {
   }
 
   associateBy<S extends string | number | symbol>(
-    selector: (el: T) => S
+    selector: (el: T) => S,
   ): ObjectChain<S, T> {
     const entries = this.map((m) => {
       return [selector(m), m] as const
@@ -195,7 +195,7 @@ export class Chain<T> {
   }
 
   associateWith<U>(
-    selector: (key: string) => U
+    selector: (key: string) => U,
   ): IfString<T, ObjectChain<string, U>> {
     const entries = this.map((el) => {
       return [
@@ -232,19 +232,19 @@ export class Chain<T> {
   }
 
   every<S extends T>(
-    predicate: (el: T, index: number, array: ReadonlyArray<T>) => el is S
+    predicate: (el: T, index: number, array: ReadonlyArray<T>) => el is S,
   ): this is Chain<S>
   every(
-    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean
+    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean,
   ): boolean
   every(
-    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean
+    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean,
   ): boolean {
     return this.val.every(predicate)
   }
 
   some(
-    predicate: (value: T, index: number, array: ReadonlyArray<T>) => boolean
+    predicate: (value: T, index: number, array: ReadonlyArray<T>) => boolean,
   ): boolean {
     return this.val.some(predicate)
   }
@@ -258,13 +258,13 @@ export class Chain<T> {
   }
 
   filter<S extends T>(
-    filter: (el: T, index: number, array: ReadonlyArray<T>) => el is S
+    filter: (el: T, index: number, array: ReadonlyArray<T>) => el is S,
   ): Chain<S>
   filter(
-    filter: (el: T, index: number, array: ReadonlyArray<T>) => boolean
+    filter: (el: T, index: number, array: ReadonlyArray<T>) => boolean,
   ): Chain<T>
   filter(
-    filter: (el: T, index: number, array: ReadonlyArray<T>) => boolean
+    filter: (el: T, index: number, array: ReadonlyArray<T>) => boolean,
   ): Chain<T> {
     const filtered = this.val.filter(filter)
     return new Chain(filtered)
@@ -274,8 +274,8 @@ export class Chain<T> {
     predicate: (
       el: T,
       index: number,
-      array: ReadonlyArray<T>
-    ) => Promise<boolean>
+      array: ReadonlyArray<T>,
+    ) => Promise<boolean>,
   ): Promise<Chain<T>> {
     const includes = await this.mapAsync(predicate)
     return this.filter((_, index) => includes.val[index])
@@ -286,19 +286,19 @@ export class Chain<T> {
   }
 
   find<S extends T>(
-    predicate: (el: T, index: number, array: ReadonlyArray<T>) => el is S
+    predicate: (el: T, index: number, array: ReadonlyArray<T>) => el is S,
   ): S | undefined
   find(
-    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean
+    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean,
   ): T | undefined
   find(
-    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean
+    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean,
   ): T | undefined {
     return this.val.find(predicate)
   }
 
   findIndex(
-    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean
+    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean,
   ): number | undefined {
     const ret = this.val.findIndex(predicate)
     if (ret === -1) return undefined
@@ -318,14 +318,14 @@ export class Chain<T> {
   }
 
   firstNotNullishOf<O>(
-    selector: (item: T) => O | undefined | null
+    selector: (item: T) => O | undefined | null,
   ): NonNullable<O> | undefined {
     return firstNotNullishOf(this.val, selector)
   }
 
   flatten(): FlattenChain<T> {
     const flattened = this.val.flatMap((it) =>
-      it instanceof Chain ? it.val : Array.isArray(it) ? it : [it]
+      it instanceof Chain ? it.val : Array.isArray(it) ? it : [it],
     )
     return new Chain(flattened) as FlattenChain<T>
   }
@@ -334,8 +334,8 @@ export class Chain<T> {
     transformer: (
       el: T,
       index: number,
-      array: ReadonlyArray<T>
-    ) => Chain<U> | ReadonlyArray<U>
+      array: ReadonlyArray<T>,
+    ) => Chain<U> | ReadonlyArray<U>,
   ): Chain<U> {
     const ret = this.val.flatMap((el, index, arr) => {
       const mapped = transformer(el, index, arr)
@@ -346,13 +346,13 @@ export class Chain<T> {
   }
 
   forEach(
-    callback: (el: T, index: number, array: ReadonlyArray<T>) => void
+    callback: (el: T, index: number, array: ReadonlyArray<T>) => void,
   ): void {
     this.map(callback)
   }
 
   groupBy<K extends string | symbol | number>(
-    selector: (el: T) => K
+    selector: (el: T) => K,
   ): ObjectChain<K, ReadonlyArray<T>> {
     const record = {} as Record<K, Array<T>>
     for (const el of this.val) {
@@ -410,14 +410,14 @@ export class Chain<T> {
   }
 
   map<U>(
-    transformer: (el: T, index: number, array: ReadonlyArray<T>) => U
+    transformer: (el: T, index: number, array: ReadonlyArray<T>) => U,
   ): Chain<U> {
     const mapped = this.val.map(transformer)
     return new Chain(mapped)
   }
 
   async mapAsync<U>(
-    transformer: (el: T, index: number, array: ReadonlyArray<T>) => Promise<U>
+    transformer: (el: T, index: number, array: ReadonlyArray<T>) => Promise<U>,
   ): Promise<Chain<U>> {
     const ret = await Promise.all(this.val.map(transformer))
     return new Chain(ret)
@@ -442,7 +442,7 @@ export class Chain<T> {
   maxOf(selector: (el: T) => string): string | undefined
   maxOf(selector: (el: T) => Date): Date | undefined
   maxOf<R extends bigint | number | string | Date>(
-    selector: (el: T) => R
+    selector: (el: T) => R,
   ): R | undefined {
     if (this.val.length === 0) return undefined
     let max: R = selector(this.val[0])
@@ -471,7 +471,7 @@ export class Chain<T> {
   minOf(selector: (el: T) => string): string | undefined
   minOf(selector: (el: T) => Date): Date | undefined
   minOf<R extends bigint | number | string | Date>(
-    selector: (el: T) => R
+    selector: (el: T) => R,
   ): R | undefined {
     if (this.val.length === 0) return undefined
     let min: R = selector(this.val[0])
@@ -501,35 +501,35 @@ export class Chain<T> {
       accumulator: T,
       current: T,
       index: number,
-      array: ReadonlyArray<T>
-    ) => T
+      array: ReadonlyArray<T>,
+    ) => T,
   ): T
   reduce(
     reducer: (
       accumulator: T,
       current: T,
       index: number,
-      array: ReadonlyArray<T>
+      array: ReadonlyArray<T>,
     ) => T,
-    initial: T
+    initial: T,
   ): T
   reduce<O>(
     reducer: (
       accumulator: O,
       current: T,
       index: number,
-      array: ReadonlyArray<T>
+      array: ReadonlyArray<T>,
     ) => O,
-    initial: O
+    initial: O,
   ): O
   reduce<O>(
     reducer: (
       accumulator: O,
       current: T,
       index: number,
-      array: ReadonlyArray<T>
+      array: ReadonlyArray<T>,
     ) => O,
-    initial?: O
+    initial?: O,
   ): O {
     return this.val.reduce<O>(reducer, initial as O)
   }
@@ -539,35 +539,35 @@ export class Chain<T> {
       accumulator: T,
       current: T,
       index: number,
-      array: ReadonlyArray<T>
-    ) => T
+      array: ReadonlyArray<T>,
+    ) => T,
   ): T
   reduceRight(
     reducer: (
       accumulator: T,
       current: T,
       index: number,
-      array: ReadonlyArray<T>
+      array: ReadonlyArray<T>,
     ) => T,
-    initial: T
+    initial: T,
   ): T
   reduceRight<O>(
     reducer: (
       accumulator: O,
       current: T,
       index: number,
-      array: ReadonlyArray<T>
+      array: ReadonlyArray<T>,
     ) => O,
-    initial: O
+    initial: O,
   ): O
   reduceRight<O>(
     reducer: (
       accumulator: O,
       current: T,
       index: number,
-      array: ReadonlyArray<T>
+      array: ReadonlyArray<T>,
     ) => O,
-    initial?: O
+    initial?: O,
   ): O {
     return this.val.reduceRight<O>(reducer, initial as O)
   }
@@ -578,7 +578,7 @@ export class Chain<T> {
 
   runningReduce<O>(
     reducer: (accumulator: O, current: T) => O,
-    initialValue: O
+    initialValue: O,
   ): Chain<O> {
     const ret = runningReduce(this.val, reducer, initialValue)
     return new Chain(ret)
@@ -596,7 +596,7 @@ export class Chain<T> {
 
   slidingWindows(
     size: number,
-    { step, partial }: { step: number; partial: boolean }
+    { step, partial }: { step: number; partial: boolean },
   ): Chain<T[]> {
     const ret = slidingWindows(this.val, size, { step, partial })
     return new Chain(ret)

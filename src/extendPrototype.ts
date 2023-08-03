@@ -2,7 +2,7 @@
 export function extendProtoype(
   target: Function,
   func: Function,
-  functionName: string
+  functionName: string,
 ): void {
   if (!Object.getOwnPropertyNames(target.prototype).includes(functionName)) {
     Object.defineProperty(target.prototype, functionName, {
@@ -14,7 +14,7 @@ export function extendProtoype(
 
 export function extendPrototypeWithName<T extends Record<string, Function>>(
   target: Function,
-  wrap: T
+  wrap: T,
 ): void {
   const keys = Object.keys(wrap)
   if (keys.length !== 1) {
@@ -32,7 +32,7 @@ type ThisFunction<F extends (...args: any) => any> = (
 
 type FirstParameter<F extends (...args: any) => any> = Parameters<F> extends [
   infer T,
-  ...infer _
+  ...infer _,
 ]
   ? T
   : never

@@ -25,13 +25,13 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^17.0.17",
-    "@typescript-eslint/eslint-plugin": "^4.32.0",
-    "@typescript-eslint/parser": "^4.32.0",
-    "auto": "^10.32.6",
-    "ava": "^4.0.1",
-    "eslint": "^7.32.0",
-    "eslint-config-prettier": "^8.3.0",
-    "prettier": "^2.4.1",
+    "@typescript-eslint/eslint-plugin": "^6.2.1",
+    "@typescript-eslint/parser": "^6.2.1",
+    "auto": "^11.0.0",
+    "ava": "^5.3.1",
+    "eslint": "^8.46.0",
+    "eslint-config-prettier": "^8.10.0",
+    "prettier": "^3.0.1",
     "typescript": "5.1.6"
   },
   "prettier": {
@@ -49,6 +49,6 @@
     ]
   },
   "dependencies": {
-    "@opencreek/deno-std-collections": "^0.109.0"
+    "@opencreek/deno-std-collections": "^0.109.1"
   }
 }
