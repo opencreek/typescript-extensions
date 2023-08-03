@@ -1,3 +1,15 @@
+# v2.1.1 (Thu Aug 03 2023)
+
+#### 🐛 Bug Fix
+
+- :arrow_up: Update dependencies [#26](https://github.com/opencreek/typescript-extensions/pull/26) ([@reckter](https://github.com/reckter))
+
+#### Authors: 1
+
+- Hannes Güdelhöfer ([@reckter](https://github.com/reckter))
+
+---
+
 # v2.1.0 (Thu Aug 03 2023)
 
 #### 🚀 Enhancement
