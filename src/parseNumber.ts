@@ -8,7 +8,7 @@ export function undefinedIfNaN(n: number): number | undefined {
 
 export function parseIntOrUndefined(
   s: string,
-  radix?: number
+  radix?: number,
 ): number | undefined {
   return undefinedIfNaN(parseInt(s, radix))
 }

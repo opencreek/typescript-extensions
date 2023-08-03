@@ -12,7 +12,7 @@ test("format should deal with null and undefined", (t) => {
     "this {} is a {} test: {}",
     null,
     undefined,
-    "some string"
+    "some string",
   )
 
   t.is(result, "this <null> is a <undefined> test: some string")

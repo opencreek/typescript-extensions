@@ -5,7 +5,7 @@ import { chain } from "./collections"
 function tableRow<T extends Record<string | number | symbol, unknown>>(
   row: T,
   columns: Array<keyof T>,
-  columnLengths: Array<number>
+  columnLengths: Array<number>,
 ): string {
   return (
     columns
@@ -35,13 +35,13 @@ function tableRow<T extends Record<string | number | symbol, unknown>>(
  * @param columns  keys of the record that will be included in the table
  */
 export function tableToString<
-  T extends Record<string | number | symbol, unknown>
+  T extends Record<string | number | symbol, unknown>,
 >(table: Array<T>, columns: Array<keyof T>): string {
   const columnLengths = columns.map((key) => {
     return (
       Math.max(
         String(key).length,
-        ...table.map((it) => String(it[key]).length)
+        ...table.map((it) => String(it[key]).length),
       ) + 1
     )
   })

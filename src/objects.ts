@@ -3,14 +3,14 @@ import { apply, extendProtoype } from "./extendPrototype"
 
 function mapThis<T, V>(
   this: NonNullable<T>,
-  body: (thiz: NonNullable<T>) => V
+  body: (thiz: NonNullable<T>) => V,
 ): V {
   return body(this)
 }
 
 function takeIf<T>(
   this: NonNullable<T>,
-  predicate: (thiz: NonNullable<T>) => boolean
+  predicate: (thiz: NonNullable<T>) => boolean,
 ): T | undefined {
   if (predicate(this)) return this
   return undefined
@@ -18,7 +18,7 @@ function takeIf<T>(
 
 function takeUnless<T>(
   this: NonNullable<T>,
-  predicate: (thiz: NonNullable<T>) => boolean
+  predicate: (thiz: NonNullable<T>) => boolean,
 ): T | undefined {
   if (predicate(this)) return undefined
   return this
@@ -35,17 +35,17 @@ declare global {
 
     takeIf<T>(
       this: NonNullable<T>,
-      predicate: (thiz: NonNullable<T>) => boolean
+      predicate: (thiz: NonNullable<T>) => boolean,
     ): T | undefined
 
     takeUnless<T>(
       this: NonNullable<T>,
-      predicate: (thiz: NonNullable<T>) => boolean
+      predicate: (thiz: NonNullable<T>) => boolean,
     ): T | undefined
 
     mapValues<T, Key extends keyof T, O>(
       this: Readonly<Record<Key, T>>,
-      transformer: (value: T) => O
+      transformer: (value: T) => O,
     ): Record<Key, O>
   }
 }
