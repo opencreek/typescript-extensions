@@ -132,7 +132,7 @@ test("should allow flattening on Chain<Array<T>>", (t) => {
 })
 
 test("should allow flattening on mixed Chains", (t) => {
-  const arr = [[1], /* chain([2, 3]), 4, */ [{ foo: 5 }]]
+  const arr = [[1], chain([2, 3]), 4, { foo: 5 }]
   const chainIn = chain(arr)
   const flattened = chainIn.flatten()
   const result = flattened.writableValue()
