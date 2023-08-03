@@ -1,3 +1,15 @@
+# v2.1.0 (Thu Aug 03 2023)
+
+#### 🚀 Enhancement
+
+- Allow flattening of Chain<Array<T>> into Chain<T> [#25](https://github.com/opencreek/typescript-extensions/pull/25) ([@reckter](https://github.com/reckter))
+
+#### Authors: 1
+
+- Hannes Güdelhöfer ([@reckter](https://github.com/reckter))
+
+---
+
 # v2.0.0 (Tue Dec 20 2022)
 
 #### 💥 Breaking Change
