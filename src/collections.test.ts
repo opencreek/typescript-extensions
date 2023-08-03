@@ -128,6 +128,14 @@ test("should allow flattening on Chain<Array<T>>", (t) => {
   const arr = [[1], [2, 3]]
   const result = chain(arr).flatten().writableValue()
 
-  t.is(result.length, 3)
   t.deepEqual(result, [1, 2, 3])
+})
+
+test("should allow flattening on mixed Chains", (t) => {
+  const arr = [[1], /* chain([2, 3]), 4, */ [{ foo: 5 }]]
+  const chainIn = chain(arr)
+  const flattened = chainIn.flatten()
+  const result = flattened.writableValue()
+
+  t.deepEqual(result, [1, 2, 3, 4, { foo: 5 }])
 })

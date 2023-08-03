@@ -33,11 +33,14 @@ import { error } from "."
 type PairSplit<T> = T extends [infer F, infer L] ? [Chain<F>, Chain<L>] : never
 
 type IfString<T, U> = T extends string ? U : never
-type FlattenChain<T> = T extends Chain<infer U>
+
+type ArrayOrChain<U> = Chain<U> | ReadonlyArray<U>
+// used to mappe type union below
+// otherwise mixed types in chains, would not be carried over correctly
+type Distribute<U> = U extends any ? { type: U } : never
+type FlattenChain<T> = Distribute<T> extends { type: ArrayOrChain<infer U> }
   ? Chain<U>
-  : T extends Array<infer U>
-  ? Chain<U>
-  : never
+  : Chain<T>
 
 export function objChain<K extends string | number | symbol, T>(
   value: Record<K, T> | ObjectChain<K, T> | Chain<readonly [K, T]>
@@ -322,7 +325,7 @@ export class Chain<T> {
 
   flatten(): FlattenChain<T> {
     const flattened = this.val.flatMap((it) =>
-      it instanceof Chain ? it.val : it
+      it instanceof Chain ? it.val : Array.isArray(it) ? it : [it]
     )
     return new Chain(flattened) as FlattenChain<T>
   }
