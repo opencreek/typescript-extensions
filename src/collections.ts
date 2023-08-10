@@ -177,7 +177,7 @@ export class ObjectChain<K extends string | number | symbol, T> {
 export class Chain<T> {
   constructor(private val: ReadonlyArray<T>) {}
 
-  distinctAsSet(): Set<T> {
+  toSet(): Set<T> {
     return new Set(this.val)
   }
 
@@ -339,11 +339,12 @@ export class Chain<T> {
       el: T,
       index: number,
       array: ReadonlyArray<T>,
-    ) => Chain<U> | ReadonlyArray<U>,
+    ) => Chain<U> | ReadonlyArray<U> | Set<U>,
   ): Chain<U> {
     const ret = this.val.flatMap((el, index, arr) => {
       const mapped = transformer(el, index, arr)
       if (mapped instanceof Chain) return mapped.value()
+      if (mapped instanceof Set) return [...mapped]
       return mapped
     })
     return new Chain(ret)
