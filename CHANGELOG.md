@@ -1,3 +1,15 @@
+# v2.2.0 (Thu Aug 10 2023)
+
+#### 🚀 Enhancement
+
+- Add Chain::asSet() [#27](https://github.com/opencreek/typescript-extensions/pull/27) ([@reckter](https://github.com/reckter))
+
+#### Authors: 1
+
+- Hannes Güdelhöfer ([@reckter](https://github.com/reckter))
+
+---
+
 # v2.1.1 (Thu Aug 03 2023)
 
 #### 🐛 Bug Fix
