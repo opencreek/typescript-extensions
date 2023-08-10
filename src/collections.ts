@@ -177,6 +177,10 @@ export class ObjectChain<K extends string | number | symbol, T> {
 export class Chain<T> {
   constructor(private val: ReadonlyArray<T>) {}
 
+  distinctAsSet(): Set<T> {
+    return new Set(this.val)
+  }
+
   writableValue(): Array<T> {
     return [...this.val]
   }
