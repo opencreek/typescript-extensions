@@ -1,3 +1,15 @@
+# v2.3.0 (Fri Aug 11 2023)
+
+#### 🚀 Enhancement
+
+- Rename `distinctAsSet` to `toSet` and add the ability to return Sets in flatMap [#28](https://github.com/opencreek/typescript-extensions/pull/28) ([@reckter](https://github.com/reckter))
+
+#### Authors: 1
+
+- Hannes Güdelhöfer ([@reckter](https://github.com/reckter))
+
+---
+
 # v2.2.0 (Thu Aug 10 2023)
 
 #### 🚀 Enhancement
