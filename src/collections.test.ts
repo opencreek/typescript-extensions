@@ -139,3 +139,26 @@ test("should allow flattening on mixed Chains", (t) => {
 
   t.deepEqual(result, [1, 2, 3, 4, { foo: 5 }])
 })
+
+test("should correctly create a set", (t) => {
+  const arr = [1, 2, 3, 2, 1, 3]
+  const set = chain(arr).toSet()
+
+  t.is(set.size, 3)
+  t.is(set.has(1), true)
+  t.is(set.has(2), true)
+  t.is(set.has(3), true)
+})
+
+test("should allow flatMap over sets", (t) => {
+  const arr = [
+    [1, 1],
+    [2, 3, 2, 3, 1],
+  ]
+
+  const result = chain(arr)
+    .flatMap((it) => new Set(it))
+    .value()
+
+  t.deepEqual(result, [1, 2, 3, 1])
+})
