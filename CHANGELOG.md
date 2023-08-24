@@ -1,3 +1,15 @@
+# v2.4.0 (Thu Aug 24 2023)
+
+#### 🚀 Enhancement
+
+- Add new concat method and make Chains iterable [#29](https://github.com/opencreek/typescript-extensions/pull/29) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v2.3.0 (Fri Aug 11 2023)
 
 #### 🚀 Enhancement
