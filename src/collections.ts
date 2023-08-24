@@ -174,8 +174,12 @@ export class ObjectChain<K extends string | number | symbol, T> {
   }
 }
 
-export class Chain<T> {
+export class Chain<T> implements Iterable<T> {
   constructor(private val: ReadonlyArray<T>) {}
+
+  [Symbol.iterator](): IterableIterator<T> {
+    return this.val[Symbol.iterator]()
+  }
 
   toSet(): Set<T> {
     return new Set(this.val)
@@ -213,6 +217,10 @@ export class Chain<T> {
   chunk(size: number): Chain<T[]> {
     const chunks = chunk(this.val, size)
     return new Chain(chunks)
+  }
+
+  concat(other: Iterable<T>): Chain<T> {
+    return new Chain([...this.val, ...other])
   }
 
   distinct(): Chain<T> {
