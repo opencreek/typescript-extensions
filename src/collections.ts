@@ -219,7 +219,7 @@ export class Chain<T> implements Iterable<T> {
     return new Chain(chunks)
   }
 
-  concat(other: IterableIterator<T>): Chain<T> {
+  concat(other: Iterable<T>): Chain<T> {
     return new Chain([...this.val, ...other])
   }
 
