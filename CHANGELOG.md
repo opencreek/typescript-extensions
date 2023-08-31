@@ -1,3 +1,15 @@
+# v2.5.0 (Thu Aug 31 2023)
+
+#### 🚀 Enhancement
+
+- Add drop, take, dropLast and takeLast [#30](https://github.com/opencreek/typescript-extensions/pull/30) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v2.4.0 (Thu Aug 24 2023)
 
 #### 🚀 Enhancement
