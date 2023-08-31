@@ -233,6 +233,22 @@ export class Chain<T> implements Iterable<T> {
     return new Chain(unique)
   }
 
+  drop(num: number): Chain<T> {
+    return new Chain(this.val.slice(num))
+  }
+
+  dropLast(num: number): Chain<T> {
+    return new Chain(this.val.slice(0, -num))
+  }
+
+  take(num: number): Chain<T> {
+    return new Chain(this.val.slice(0, num))
+  }
+
+  takeLast(num: number): Chain<T> {
+    return new Chain(this.val.slice(-num))
+  }
+
   dropLastWhile(predicate: (el: T) => boolean): Chain<T> {
     const dropped = dropLastWhile(this.val, predicate)
     return new Chain(dropped)
