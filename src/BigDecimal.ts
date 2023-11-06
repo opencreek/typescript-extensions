@@ -44,7 +44,29 @@ export enum RoundingMode {
   ROUND_UNNECESSARY = "ROUND_UNNECESSARY",
 }
 
+export function compareBigDecimals(
+  a: BigDecimal | number | bigint,
+  b: BigDecimal | number | bigint,
+): -1 | 0 | 1 {
+  if (typeof a === "number" || typeof a === "bigint") {
+    a = new BigDecimal(a)
+  }
+  if (typeof b === "number" || typeof b === "bigint") {
+    b = new BigDecimal(b)
+  }
+
+  return a.compareTo(b)
+}
+
 export class BigDecimal {
+  /**
+   * This scale is used to widen values to when valueOf is called.
+   * This is necessary because valueOf returns a bigint and to make sensible comparisons, all valueOf bigints have to have the same scale.
+   */
+  static DEFAULT_VALUE_OF_SCALE = 18
+
+  static compare = compareBigDecimals
+
   /**
    * The unscaled value of the BigDecimal, e.g. 12345 for 12.345 with a scale of 3.
    */
@@ -249,7 +271,39 @@ export class BigDecimal {
     return this.#scale
   }
 
-  valueOf(): string {
+  compareTo(value: BigDecimal): -1 | 0 | 1 {
+    const scale = Math.max(this.#scale, value.#scale)
+
+    const a = this.#widen(scale)
+    const b = value.#widen(scale)
+
+    if (a < b) {
+      return -1
+    } else if (a > b) {
+      return 1
+    } else {
+      return 0
+    }
+  }
+
+  equals(value: BigDecimal): boolean {
+    return this.compareTo(value) === 0
+  }
+
+  /**
+   * Returns a scaled value of this BigDecimal. The scale is always BigDecimal.DEFAULT_VALUE_OF_SCALE to make sure that comparisons work without issue.
+   */
+  valueOf(): bigint {
+    if (this.#scale > BigDecimal.DEFAULT_VALUE_OF_SCALE) {
+      error(
+        "BigDecimal: scale is too large for valueOf. Might happen because of a comparison?",
+      )
+    }
+
+    return this.#widen(BigDecimal.DEFAULT_VALUE_OF_SCALE)
+  }
+
+  toJSON(): string {
     return this.toString()
   }
 

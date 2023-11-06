@@ -535,3 +535,32 @@ test("BigDecimal multiplication", (t) => {
     "25678249744378094256694257947562549625496254978349782546.378549625476254762547624",
   )
 })
+
+test("BigDecimal.valueOf", (t) => {
+  const a = new BigDecimal("-1.3")
+  const b = new BigDecimal("-1.1")
+  const c = new BigDecimal("-1.3000000000000001")
+
+  t.true(a < b, `${a} < ${b}`)
+  t.false(a > b, `${a} > ${b}`)
+  t.true(a > c, `${a} > ${c}`)
+})
+
+test("BigDecimal.compareTo", (t) => {
+  const a = new BigDecimal("-1.3")
+  const b = new BigDecimal("-1.1")
+  const c = new BigDecimal("-1.3000000000000001")
+
+  const a0 = new BigDecimal("-1.300000000000")
+
+  t.is(a.compareTo(b), -1, `${a}.compareTo(${b}) == -1`)
+  t.is(a.compareTo(c), 1, `${a}.compareTo(${c}) == 1`)
+  t.is(a.compareTo(a), 0, `${a}.compareTo(${a}) == 0`)
+
+  t.is(a.equals(a0), true, `${a}.equals(${a0}) == true`)
+
+  const arr = [a, b, c, a0, 0, -1n, a.mul(new BigDecimal("-2"))].sort(
+    BigDecimal.compare,
+  )
+  t.snapshot(arr.map((it) => it.toString()))
+})
