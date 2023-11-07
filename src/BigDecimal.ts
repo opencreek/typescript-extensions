@@ -80,25 +80,28 @@ export class BigDecimal {
     if (value instanceof BigDecimal) {
       this.#value = value.#value
       this.#scale = value.#scale
-    } else {
-      const str = value.toString()
-      // check for scientific notation, which we just ignore
-      if (str.includes("e")) {
-        error("BigDecimal: exponential notation is not supported")
-      }
 
-      // split into integer and decimal parts
-      const [integer, decimal] = str.split(".")
+      // value and scale from the other BigDecimal were already checked to be good, so we can just return here
+      return
+    }
 
-      // The unscaled value is the integer part followed by the decimal part
-      this.#value = BigInt(`${integer}${decimal ?? ""}`)
-      // The initial scale is either given (needed for certain math operations) or the length of the decimal part
-      this.#scale = scale ?? decimal?.length ?? 0
+    const str = value.toString()
+    // check for scientific notation, which we just ignore
+    if (str.includes("e")) {
+      error("BigDecimal: exponential notation is not supported")
+    }
 
-      // we can't handle scales larger than that
-      if (this.#scale > Number.MAX_SAFE_INTEGER) {
-        error("BigDecimal: decimal part is too long")
-      }
+    // split into integer and decimal parts
+    const [integer, decimal] = str.split(".")
+
+    // The unscaled value is the integer part followed by the decimal part
+    this.#value = BigInt(`${integer}${decimal ?? ""}`)
+    // The initial scale is either given (needed for certain math operations) or the length of the decimal part
+    this.#scale = scale ?? decimal?.length ?? 0
+
+    // we can't handle scales larger than that
+    if (this.#scale > Number.MAX_SAFE_INTEGER) {
+      error("BigDecimal: decimal part is too long")
     }
 
     // negative scales don't make sense so we throw here
