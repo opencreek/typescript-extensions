@@ -1,3 +1,15 @@
+# v2.6.0 (Tue Nov 07 2023)
+
+#### 🚀 Enhancement
+
+- Add BigDecimal class [#31](https://github.com/opencreek/typescript-extensions/pull/31) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v2.5.0 (Thu Aug 31 2023)
 
 #### 🚀 Enhancement
