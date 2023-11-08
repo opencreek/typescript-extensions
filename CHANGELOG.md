@@ -1,3 +1,15 @@
+# v2.6.1 (Wed Nov 08 2023)
+
+#### 🐛 Bug Fix
+
+- Export BigDecimals [#32](https://github.com/opencreek/typescript-extensions/pull/32) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v2.6.0 (Tue Nov 07 2023)
 
 #### 🚀 Enhancement
