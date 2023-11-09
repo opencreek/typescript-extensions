@@ -564,3 +564,54 @@ test("BigDecimal.compareTo", (t) => {
   )
   t.snapshot(arr.map((it) => it.toString()))
 })
+
+test("BigDecimal toBigInt", (t) => {
+  t.is(new BigDecimal("1.1").toBigInt(RoundingMode.ROUND_DOWN), 1n)
+  t.is(new BigDecimal("1.9").toBigInt(RoundingMode.ROUND_DOWN), 1n)
+  t.is(new BigDecimal("-1.1").toBigInt(RoundingMode.ROUND_DOWN), -1n)
+  t.is(new BigDecimal("-1.9").toBigInt(RoundingMode.ROUND_DOWN), -1n)
+
+  t.is(new BigDecimal("1.1").toBigInt(RoundingMode.ROUND_UP), 2n)
+  t.is(new BigDecimal("1.9").toBigInt(RoundingMode.ROUND_UP), 2n)
+  t.is(new BigDecimal("-1.1").toBigInt(RoundingMode.ROUND_UP), -2n)
+  t.is(new BigDecimal("-1.9").toBigInt(RoundingMode.ROUND_UP), -2n)
+})
+
+test("BigDecimal format", (t) => {
+  const enFormatter = new Intl.NumberFormat("en-US", {
+    currency: "USD",
+    style: "currency",
+  })
+  const deFormatter = new Intl.NumberFormat("de-DE", {
+    currency: "EUR",
+    style: "currency",
+  })
+  const jpFormatter = new Intl.NumberFormat("ja-JP", {
+    currency: "JPY",
+    style: "currency",
+  })
+
+  t.is(new BigDecimal("1.1").format(enFormatter), "$1.10")
+  t.is(
+    new BigDecimal(
+      "172584172487128471827481274812748172482173817264578623174671127348912478127481274.127481274821748",
+    ).format(enFormatter),
+    "$172,584,172,487,128,471,827,481,274,812,748,172,482,173,817,264,578,623,174,671,127,348,912,478,127,481,274.13",
+  )
+
+  t.is(new BigDecimal("1.1").format(deFormatter), "1,10 €")
+  t.is(
+    new BigDecimal(
+      "172584172487128471827481274812748172482173817264578623174671127348912478127481274.127481274821748",
+    ).format(deFormatter),
+    "172.584.172.487.128.471.827.481.274.812.748.172.482.173.817.264.578.623.174.671.127.348.912.478.127.481.274,13 €",
+  )
+
+  t.is(new BigDecimal("1.1").format(jpFormatter), "￥1")
+  t.is(
+    new BigDecimal(
+      "172584172487128471827481274812748172482173817264578623174671127348912478127481274.127481274821748",
+    ).format(jpFormatter),
+    "￥172,584,172,487,128,471,827,481,274,812,748,172,482,173,817,264,578,623,174,671,127,348,912,478,127,481,274",
+  )
+})

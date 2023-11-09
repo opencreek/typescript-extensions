@@ -1,3 +1,4 @@
+import { chain } from "./collections"
 import { error } from "./error"
 
 export enum RoundingMode {
@@ -272,6 +273,48 @@ export class BigDecimal {
    */
   scale(): number {
     return this.#scale
+  }
+
+  /**
+   * Round the BigDecimal to an integer with the given rounding mode and return it
+   *
+   * @param roundingMode The rounding mode to use.
+   * @returns The rounded integer.
+   */
+  toBigInt(roundingMode: RoundingMode): bigint {
+    const result = this.round(0, roundingMode)
+    if (result.#scale > 0) {
+      error("BigDecimal: integer part has a scale")
+    }
+
+    return result.#value
+  }
+
+  /**
+   * Format the BigDecimal with the given formatter.
+   * This might lose some precision depending on the implementation of formatToParts with string parameters. Safari for example might lose some precision and we will not know about it.
+   *
+   * @param formatter The formatter to use.
+   * @returns The formatted string.
+   */
+  format(formatter: Intl.NumberFormat): string {
+    const integerNumber = this.toBigInt(RoundingMode.ROUND_DOWN)
+    const decimalNumber = this.sub(new BigDecimal(integerNumber))
+
+    const integerParts = formatter.formatToParts(integerNumber)
+    // @ts-expect-error formatToParts does accept string parameters for formatting, even if the types don't know that
+    const decimalParts = formatter.formatToParts(decimalNumber.toString())
+
+    const partsBeforeDecimal = chain(integerParts)
+      .takeWhile((part) => part.type !== "decimal")
+      .value()
+    const partsAfterDecimal = chain(decimalParts)
+      .dropWhile((part) => part.type !== "decimal")
+      .value()
+
+    return [...partsBeforeDecimal, ...partsAfterDecimal]
+      .map((it) => it.value)
+      .join("")
   }
 
   compareTo(value: BigDecimal): -1 | 0 | 1 {
