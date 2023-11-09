@@ -1,3 +1,15 @@
+# v2.7.0 (Thu Nov 09 2023)
+
+#### 🚀 Enhancement
+
+- Add a format and a toBigInt function to BigDecimal [#33](https://github.com/opencreek/typescript-extensions/pull/33) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v2.6.1 (Wed Nov 08 2023)
 
 #### 🐛 Bug Fix
