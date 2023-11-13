@@ -1,3 +1,15 @@
+# v2.7.1 (Mon Nov 13 2023)
+
+#### 🐛 Bug Fix
+
+- Fix compact display notations showing decimal parts [#34](https://github.com/opencreek/typescript-extensions/pull/34) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v2.7.0 (Thu Nov 09 2023)
 
 #### 🚀 Enhancement
