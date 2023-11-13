@@ -582,6 +582,12 @@ test("BigDecimal format", (t) => {
     currency: "USD",
     style: "currency",
   })
+  const shortEnFormatter = new Intl.NumberFormat("en-US", {
+    currency: "USD",
+    style: "currency",
+    notation: "compact",
+    compactDisplay: "short",
+  })
   const deFormatter = new Intl.NumberFormat("de-DE", {
     currency: "EUR",
     style: "currency",
@@ -614,4 +620,6 @@ test("BigDecimal format", (t) => {
     ).format(jpFormatter),
     "￥172,584,172,487,128,471,827,481,274,812,748,172,482,173,817,264,578,623,174,671,127,348,912,478,127,481,274",
   )
+
+  t.is(new BigDecimal("12345.67").format(shortEnFormatter), "$12K")
 })

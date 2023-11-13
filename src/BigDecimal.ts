@@ -305,9 +305,17 @@ export class BigDecimal {
     // @ts-expect-error formatToParts does accept string parameters for formatting, even if the types don't know that
     const decimalParts = formatter.formatToParts(decimalNumber.toString())
 
+    const isCompactDisplay = integerParts.some((it) => it.type === "compact")
+
     const partsBeforeDecimal = chain(integerParts)
       .takeWhile((part) => part.type !== "decimal")
       .value()
+
+    if (isCompactDisplay) {
+      // if we find a compact display notation, we assume you don't want to see the decimal part
+      return partsBeforeDecimal.map((it) => it.value).join("")
+    }
+
     const partsAfterDecimal = chain(decimalParts)
       .dropWhile((part) => part.type !== "decimal")
       .value()
