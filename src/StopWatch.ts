@@ -22,7 +22,7 @@ export class StopWatch {
 
   start(task: string): void {
     const latestTask = this.tasks[this.tasks.length - 1]
-    if (latestTask?.elapsed === undefined) {
+    if (latestTask != null && latestTask?.elapsed == null) {
       this.stop()
     }
 
@@ -34,7 +34,7 @@ export class StopWatch {
 
   stop(): void {
     const latestTask = this.tasks[this.tasks.length - 1]
-    if (latestTask?.elapsed === undefined) {
+    if (latestTask != null && latestTask?.elapsed == null) {
       latestTask.elapsed = new Date().valueOf() - latestTask.start
     }
   }
