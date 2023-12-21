@@ -1,3 +1,15 @@
+# v2.7.2 (Thu Dec 21 2023)
+
+#### 🐛 Bug Fix
+
+- Fix stopwatch not being able to be started later [#35](https://github.com/opencreek/typescript-extensions/pull/35) ([@reckter](https://github.com/reckter))
+
+#### Authors: 1
+
+- Hannes Güdelhöfer ([@reckter](https://github.com/reckter))
+
+---
+
 # v2.7.1 (Mon Nov 13 2023)
 
 #### 🐛 Bug Fix
