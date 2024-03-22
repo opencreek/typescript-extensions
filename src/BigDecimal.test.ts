@@ -622,4 +622,15 @@ test("BigDecimal format", (t) => {
   )
 
   t.is(new BigDecimal("12345.67").format(shortEnFormatter), "$12K")
+
+  t.is(new BigDecimal("-1.11").format(enFormatter), "-$1.11")
+  t.is(new BigDecimal("-1.01").format(enFormatter), "-$1.01")
+  t.is(new BigDecimal("-3000").format(enFormatter), "-$3,000.00")
+  t.is(
+    new BigDecimal(
+      "-172584172487128471827481274812748172482173817264578623174671127348912478127481274.127481274821748",
+    ).format(jpFormatter),
+    "-￥172,584,172,487,128,471,827,481,274,812,748,172,482,173,817,264,578,623,174,671,127,348,912,478,127,481,274",
+  )
+  t.is(new BigDecimal("-3000.01").format(enFormatter), "-$3,000.01")
 })

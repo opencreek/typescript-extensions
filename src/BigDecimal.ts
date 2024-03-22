@@ -365,13 +365,16 @@ export class BigDecimal {
    * Returns a string representation of this BigDecimal.
    */
   toString(): string {
-    const value = this.#value.toString().padStart(this.#scale + 1, "0")
+    const isNegative = this.#value < 0n
+    const absValue = isNegative ? -this.#value : this.#value
+    const value = absValue.toString().padStart(this.#scale + 1, "0")
     const scale = this.#scale
+    const sign = isNegative ? "-" : ""
     if (scale === 0) {
-      return value
+      return sign + value
     }
 
-    return `${value.slice(0, -scale)}.${value.slice(-scale)}`
+    return `${sign}${value.slice(0, -scale)}.${value.slice(-scale)}`
   }
 }
 
