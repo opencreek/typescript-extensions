@@ -311,17 +311,6 @@ export class BigDecimal {
       .takeWhile((part) => part.type !== "decimal")
       .value()
 
-    // console.dir({
-    //   integerNumber,
-    //   decimalNumber: decimalNumber.toString(),
-    //   decimalNumberSc: decimalNumber.#scale,
-    //   decimalNumberVa: decimalNumber.#value,
-    //   integerParts,
-    //   decimalParts,
-    //   isCompactDisplay,
-    //   partsBeforeDecimal,
-    // })
-
     if (isCompactDisplay) {
       // if we find a compact display notation, we assume you don't want to see the decimal part
       return partsBeforeDecimal.map((it) => it.value).join("")
