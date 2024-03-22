@@ -1,3 +1,15 @@
+# v2.7.3 (Fri Mar 22 2024)
+
+#### 🐛 Bug Fix
+
+- Fix BigDecimal formatting for small negative fractions [#36](https://github.com/opencreek/typescript-extensions/pull/36) ([@happenslol](https://github.com/happenslol))
+
+#### Authors: 1
+
+- Hilmar Wiegand ([@happenslol](https://github.com/happenslol))
+
+---
+
 # v2.7.2 (Thu Dec 21 2023)
 
 #### 🐛 Bug Fix
