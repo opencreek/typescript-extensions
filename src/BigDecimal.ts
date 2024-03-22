@@ -311,6 +311,17 @@ export class BigDecimal {
       .takeWhile((part) => part.type !== "decimal")
       .value()
 
+    // console.dir({
+    //   integerNumber,
+    //   decimalNumber: decimalNumber.toString(),
+    //   decimalNumberSc: decimalNumber.#scale,
+    //   decimalNumberVa: decimalNumber.#value,
+    //   integerParts,
+    //   decimalParts,
+    //   isCompactDisplay,
+    //   partsBeforeDecimal,
+    // })
+
     if (isCompactDisplay) {
       // if we find a compact display notation, we assume you don't want to see the decimal part
       return partsBeforeDecimal.map((it) => it.value).join("")
@@ -365,13 +376,16 @@ export class BigDecimal {
    * Returns a string representation of this BigDecimal.
    */
   toString(): string {
-    const value = this.#value.toString().padStart(this.#scale + 1, "0")
+    const isNegative = this.#value < 0n
+    const absValue = isNegative ? -this.#value : this.#value
+    const value = absValue.toString().padStart(this.#scale + 1, "0")
     const scale = this.#scale
+    const sign = isNegative ? "-" : ""
     if (scale === 0) {
-      return value
+      return sign + value
     }
 
-    return `${value.slice(0, -scale)}.${value.slice(-scale)}`
+    return `${sign}${value.slice(0, -scale)}.${value.slice(-scale)}`
   }
 }
 
