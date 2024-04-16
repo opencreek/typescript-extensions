@@ -44,7 +44,7 @@ type FlattenChain<T> = Distribute<T> extends { type: ArrayOrChain<infer U> }
 
 export function objChain<K extends string | number | symbol, T>(
   value: Record<K, T> | ObjectChain<K, T> | Chain<readonly [K, T]>,
-): ObjectChain<K, T>
+): ObjectChain<K, T, Record<K, T>>
 export function objChain<K extends string | number | symbol, T>(
   value: Partial<Record<K, T>>,
 ): ObjectChain<K, T, Partial<Record<K, T>>>
