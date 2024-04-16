@@ -51,6 +51,7 @@ export function objChain<_K extends string | number | symbol, _T>(
 export function objChain<K extends string | number | symbol, T>(
   value:
     | Record<K, T>
+    | Partial<Record<K, T>>
     | ObjectChain<K, T>
     | Chain<readonly [K, T]>
     | undefined
@@ -59,6 +60,7 @@ export function objChain<K extends string | number | symbol, T>(
 export function objChain<K extends string | number | symbol, T>(
   value:
     | Record<K, T>
+    | Partial<Record<K, T>>
     | ObjectChain<K, T>
     | Chain<readonly [K, T]>
     | undefined
