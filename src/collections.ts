@@ -44,7 +44,10 @@ type FlattenChain<T> = Distribute<T> extends { type: ArrayOrChain<infer U> }
 
 export function objChain<K extends string | number | symbol, T>(
   value: Record<K, T> | ObjectChain<K, T> | Chain<readonly [K, T]>,
-): ObjectChain<K, T>
+): ObjectChain<K, T, Record<K, T>>
+export function objChain<K extends string | number | symbol, T>(
+  value: Partial<Record<K, T>>,
+): ObjectChain<K, T, Partial<Record<K, T>>>
 export function objChain<_K extends string | number | symbol, _T>(
   value: undefined | null,
 ): undefined
@@ -59,21 +62,21 @@ export function objChain<K extends string | number | symbol, T>(
 export function objChain<K extends string | number | symbol, T>(
   value:
     | Record<K, T>
+    | Partial<Record<K, T>>
     | ObjectChain<K, T>
     | Chain<readonly [K, T]>
     | undefined
     | null,
-): ObjectChain<K, T> | undefined {
+): ObjectChain<K, T, Partial<Record<K, T>>> | undefined {
   if (value == null) return undefined
   if (value instanceof ObjectChain) {
     return value
   }
 
   if (value instanceof Chain) {
-    return new ObjectChain(Object.fromEntries(value.value())) as ObjectChain<
-      K,
-      T
-    >
+    return new ObjectChain(
+      Object.fromEntries(value.value()) as Record<K, T>,
+    ) as ObjectChain<K, T>
   }
 
   return new ObjectChain(value)
@@ -96,10 +99,14 @@ export function chain<T>(
   return new Chain([...value])
 }
 
-export class ObjectChain<K extends string | number | symbol, T> {
-  constructor(private val: Record<K, T>) {}
+export class ObjectChain<
+  K extends string | number | symbol,
+  T,
+  Rec extends Partial<Record<K, T>> = Record<K, T>,
+> {
+  constructor(private val: Rec) {}
 
-  value(): Record<K, T> {
+  value(): Rec {
     return this.val
   }
 
@@ -143,7 +150,9 @@ export class ObjectChain<K extends string | number | symbol, T> {
       return transformer(k, v)
     })
 
-    return new ObjectChain(Object.fromEntries(mapped)) as ObjectChain<U, V>
+    return new ObjectChain(
+      Object.fromEntries(mapped) as Record<U, V>,
+    ) as ObjectChain<U, V>
   }
 
   filterKeys(filter: (key: K) => boolean): ObjectChain<K, T> {
@@ -152,7 +161,9 @@ export class ObjectChain<K extends string | number | symbol, T> {
       return filter(k)
     })
 
-    return new ObjectChain(Object.fromEntries(filtered)) as ObjectChain<K, T>
+    return new ObjectChain(
+      Object.fromEntries(filtered) as Record<K, T>,
+    ) as ObjectChain<K, T>
   }
 
   filterValues(filter: (value: T) => boolean): ObjectChain<K, T> {
@@ -161,7 +172,9 @@ export class ObjectChain<K extends string | number | symbol, T> {
       return filter(v)
     })
 
-    return new ObjectChain(Object.fromEntries(filtered)) as ObjectChain<K, T>
+    return new ObjectChain(
+      Object.fromEntries(filtered) as Record<K, T>,
+    ) as ObjectChain<K, T>
   }
 
   filterEntries(filter: (key: K, value: T) => boolean): ObjectChain<K, T> {
@@ -170,7 +183,9 @@ export class ObjectChain<K extends string | number | symbol, T> {
       return filter(k, v)
     })
 
-    return new ObjectChain(Object.fromEntries(filtered)) as ObjectChain<K, T>
+    return new ObjectChain(
+      Object.fromEntries(filtered) as Record<K, T>,
+    ) as ObjectChain<K, T>
   }
 }
 
