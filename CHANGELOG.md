@@ -1,3 +1,15 @@
+# v2.7.4 (Tue Apr 16 2024)
+
+#### 🐛 Bug Fix
+
+- Allow partial records for objChain creation [#37](https://github.com/opencreek/typescript-extensions/pull/37) ([@reckter](https://github.com/reckter))
+
+#### Authors: 1
+
+- Hannes Güdelhöfer ([@reckter](https://github.com/reckter))
+
+---
+
 # v2.7.3 (Fri Mar 22 2024)
 
 #### 🐛 Bug Fix
