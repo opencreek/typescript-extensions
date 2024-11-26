@@ -1,5 +1,6 @@
 import test from "ava"
-import { AsyncChain, chain } from "./collections"
+import { asyncChain, AsyncChain, chain } from "./collections"
+import { sleep } from "./sleep"
 
 test("should associateBy correctly", (t) => {
   const result = chain([1, 2, 3])
@@ -167,10 +168,8 @@ test("AsyncChain should map", async (t) => {
   const chain = new AsyncChain([1, 2, 3])
 
   const b = chain.map((it) => it * 2)
-  console.log(b)
 
   const result = await b.value()
-  console.log(result)
 
   t.deepEqual(result, [2, 4, 6])
 })
@@ -191,8 +190,29 @@ test("chain::mapAsync should be chainable into an async chain", async (t) => {
   const b = await c
     .mapAsync(async (it) => it * 3)
     .filter(async (it) => it % 2 === 1)
+    .sortBy(async it => -it)
 
   const result = b.value()
 
-  t.deepEqual(result, [3, 9, 15])
+  t.deepEqual(result, [15, 9, 3])
 })
+
+test("AsyncChain should be chainable", async (t) => {
+  const c = asyncChain([1, 2, 3, 4, 5])
+
+  const b = await c
+    .map(withDelay((it) => it * 3))
+    .filter(withDelay( (it) => it % 2 === 1))
+    .sortBy(withDelay(it => -it))
+
+  const result = b.value()
+
+  t.deepEqual(result, [15, 9, 3])
+})
+
+function withDelay<T, U>(transform: (el: T) => U): (el:T) => Promise<U> {
+  return async (el:T) => {
+    await sleep(0)
+    return transform(el)
+  }
+}
