@@ -1,5 +1,5 @@
 import test from "ava"
-import { chain } from "./collections"
+import { AsyncChain, chain } from "./collections"
 
 test("should associateBy correctly", (t) => {
   const result = chain([1, 2, 3])
@@ -161,4 +161,38 @@ test("should allow flatMap over sets", (t) => {
     .value()
 
   t.deepEqual(result, [1, 2, 3, 1])
+})
+
+test("AsyncChain should map", async (t) => {
+  const chain = new AsyncChain([1, 2, 3])
+
+  const b = chain.map((it) => it * 2)
+  console.log(b)
+
+  const result = await b.value()
+  console.log(result)
+
+  t.deepEqual(result, [2, 4, 6])
+})
+
+test("chain::mapAsync should be downwards compatible", async (t) => {
+  const c = chain([1, 2, 3, 4, 5])
+
+  const b = await c.mapAsync(async (it) => it * 3)
+
+  const result = b.value()
+
+  t.deepEqual(result, [3, 6, 9, 12, 15])
+})
+
+test("chain::mapAsync should be chainable into an async chain", async (t) => {
+  const c = chain([1, 2, 3, 4, 5])
+
+  const b = await c
+    .mapAsync(async (it) => it * 3)
+    .filter(async (it) => it % 2 === 1)
+
+  const result = b.value()
+
+  t.deepEqual(result, [3, 9, 15])
 })
