@@ -697,7 +697,15 @@ export class Chain<T> implements Iterable<T> {
 }
 
 abstract class AsyncChainBase<T> implements Promise<Chain<T>> {
-  constructor() {}
+  private _value: Promise<Chain<T>> | null
+
+  protected constructor() {
+    this._value = null
+  }
+
+  protected startCalclulation() {
+    this._value = this.calculate()
+  }
 
   [Symbol.toStringTag] = "AsyncChain"
 
@@ -711,7 +719,7 @@ abstract class AsyncChainBase<T> implements Promise<Chain<T>> {
       | null
       | undefined,
   ): Promise<TResult1 | TResult2> {
-    return await this.await().then(onfulfilled, onrejected)
+    return await this.calculate().then(onfulfilled, onrejected)
   }
 
   async catch<TResult = never>(
@@ -730,7 +738,11 @@ abstract class AsyncChainBase<T> implements Promise<Chain<T>> {
     ).finally(onfinally)
   }
 
-  abstract await(): Promise<Chain<T>>
+  abstract calculate(): Promise<Chain<T>>
+
+  async await(): Promise<Chain<T>> {
+    return (await this._value) ?? (await this.calculate())
+  }
 
   async value(): Promise<ReadonlyArray<T>> {
     return (await this.await()).value()
@@ -1394,9 +1406,10 @@ export class DistinctAsyncChain<T, D> extends AsyncChainBase<T> {
     private selector: (el: T) => D,
   ) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<T>> {
+  async calculate(): Promise<Chain<T>> {
     return (await this.val.await()).distinctBy(this.selector)
   }
 }
@@ -1408,9 +1421,10 @@ export class SliceAsyncChain<T> extends AsyncChainBase<T> {
     private end?: number,
   ) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<T>> {
+  async calculate(): Promise<Chain<T>> {
     return (await this.val.await()).slice(this.start, this.end)
   }
 }
@@ -1425,9 +1439,10 @@ export class FilterAsyncChain<T> extends AsyncChainBase<T> {
     ) => Promise<boolean> | boolean,
   ) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<T>> {
+  async calculate(): Promise<Chain<T>> {
     const current = await this.val.await()
     const mask = await asyncChain(current).map(this.predicate).value()
 
@@ -1444,9 +1459,10 @@ type FlattenAsyncType<T> = Distribute<T> extends {
 export class FlattenAsyncChain<T> extends AsyncChainBase<FlattenAsyncType<T>> {
   constructor(private val: AsyncChainBase<T>) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<FlattenAsyncType<T>>> {
+  async calculate(): Promise<Chain<FlattenAsyncType<T>>> {
     return (await this.val.await()).flatten() as Chain<FlattenAsyncType<T>>
   }
 }
@@ -1461,9 +1477,10 @@ export class MappingAsyncChain<T, U> extends AsyncChainBase<U> {
     ) => U | Promise<U>,
   ) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<U>> {
+  async calculate(): Promise<Chain<U>> {
     return asyncChain(
       (await this.val.await()).map(
         async (el, index, array) =>
@@ -1486,9 +1503,10 @@ export class SortByAsyncChain<T> extends AsyncChainBase<T> {
       | number,
   ) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<T>> {
+  async calculate(): Promise<Chain<T>> {
     const values = await this.val
       .map(async (el) => [el, await this.selector(el)] as const)
       .await()
@@ -1502,9 +1520,10 @@ export class SortingAsyncChain<T> extends AsyncChainBase<T> {
     private compareFn?: (a: T, b: T) => number,
   ) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<T>> {
+  async calculate(): Promise<Chain<T>> {
     return (await this.val.await()).sort(this.compareFn)
   }
 }
@@ -1512,9 +1531,10 @@ export class SortingAsyncChain<T> extends AsyncChainBase<T> {
 export class ReversingAsyncChain<T> extends AsyncChainBase<T> {
   constructor(private val: AsyncChainBase<T>) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<T>> {
+  async calculate(): Promise<Chain<T>> {
     return (await this.val.await()).reverse()
   }
 }
@@ -1524,9 +1544,10 @@ export class PermutationsAsyncChain<T> extends AsyncChainBase<
 > {
   constructor(private val: AsyncChainBase<T>) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<ReadonlyArray<T>>> {
+  async calculate(): Promise<Chain<ReadonlyArray<T>>> {
     return (await this.val.await()).permutations()
   }
 }
@@ -1541,9 +1562,10 @@ export class TakeWhileAsyncChain<T> extends AsyncChainBase<T> {
     ) => Promise<boolean> | boolean,
   ) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<T>> {
+  async calculate(): Promise<Chain<T>> {
     const values = await this.val.value()
     const ret: Array<T> = []
     for (let i = 0; i < values.length; i++) {
@@ -1568,9 +1590,10 @@ export class DropWhileAsyncChain<T> extends AsyncChainBase<T> {
     ) => Promise<boolean> | boolean,
   ) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<T>> {
+  async calculate(): Promise<Chain<T>> {
     const values = await this.val.value()
     const ret: Array<T> = []
     for (let i = 0; i < values.length; i++) {
@@ -1591,9 +1614,10 @@ export class ZippingAsyncChain<T, U> extends AsyncChainBase<[T, U]> {
     private withArray: readonly U[] | AsyncChainBase<U>,
   ) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<[T, U]>> {
+  async calculate(): Promise<Chain<[T, U]>> {
     const other =
       this.withArray instanceof AsyncChainBase
         ? await this.withArray.value()
@@ -1608,9 +1632,10 @@ export class UnionAsyncChain<T> extends AsyncChainBase<T> {
     private withArrays: ReadonlyArray<readonly T[] | AsyncChainBase<T>>,
   ) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<T>> {
+  async calculate(): Promise<Chain<T>> {
     const other = await Promise.all(
       this.withArrays.map(async (it) =>
         it instanceof AsyncChainBase ? await it.value() : it,
@@ -1628,9 +1653,10 @@ export class RunningReduceAsyncChain<T, O> extends AsyncChainBase<O> {
     private initialValue: O,
   ) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<O>> {
+  async calculate(): Promise<Chain<O>> {
     const ret = await this.val.reduce(
       async (acc, it) => {
         const elem = acc[acc.length - 1]
@@ -1650,9 +1676,10 @@ export class ConcatenatingAsyncChain<T> extends AsyncChainBase<T> {
     private other: AsyncChainBase<T> | Iterable<T>,
   ) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<T>> {
+  async calculate(): Promise<Chain<T>> {
     const adding =
       this.other instanceof AsyncChainBase
         ? await this.other.await()
@@ -1667,9 +1694,10 @@ export class ChunkingAsyncChain<T> extends AsyncChainBase<T[]> {
     private size: number,
   ) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<T[]>> {
+  async calculate(): Promise<Chain<T[]>> {
     const chunks = chunk(await this.val.value(), this.size)
     return new AsyncChain(chunks)
   }
@@ -1681,9 +1709,10 @@ export class IntersectionAsyncChain<T> extends AsyncChainBase<T> {
     private withArrays: ReadonlyArray<readonly T[] | AsyncChainBase<T>>,
   ) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<T>> {
+  async calculate(): Promise<Chain<T>> {
     const others = await Promise.all(
       this.withArrays.map(async (it) =>
         it instanceof AsyncChainBase ? await it.value() : it,
@@ -1708,7 +1737,7 @@ export class SlidingWindowAsyncChain<T> extends AsyncChainBase<
     super()
   }
 
-  async await(): Promise<Chain<ReadonlyArray<T>>> {
+  async calculate(): Promise<Chain<ReadonlyArray<T>>> {
     const ret = slidingWindows(await this.val.value(), this.size, this.options)
     return new Chain(ret)
   }
@@ -1726,9 +1755,10 @@ export function asyncChain<T>(
 export class AsyncChain<T> extends AsyncChainBase<T> {
   constructor(private val: ReadonlyArray<Promise<T> | T>) {
     super()
+    this.startCalclulation()
   }
 
-  async await(): Promise<Chain<T>> {
+  async calculate(): Promise<Chain<T>> {
     return new Chain(await Promise.all(this.val))
   }
 }
