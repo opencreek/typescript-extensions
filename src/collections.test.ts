@@ -1,6 +1,7 @@
 import test from "ava"
-import { asyncChain, AsyncChain, chain } from "./collections"
+import { chain } from "./collections"
 import { sleep } from "./sleep"
+import { asyncChain, AsyncChain } from "./collections/async/AsyncChain"
 
 test("should associateBy correctly", (t) => {
   const result = chain([1, 2, 3])
@@ -213,6 +214,18 @@ test("AsyncChain should be chainable", async (t) => {
     .sortBy(withDelay((it) => -it))
 
   const result = b.value()
+
+  t.deepEqual(result, [15, 9, 3])
+})
+
+test("AsyncChain should be chainable including value", async (t) => {
+  const c = asyncChain([1, 2, 3, 4, 5])
+
+  const result = await c
+    .map(withDelay((it) => it * 3))
+    .filter(withDelay((it) => it % 2 === 1))
+    .sortBy(withDelay((it) => -it))
+    .value()
 
   t.deepEqual(result, [15, 9, 3])
 })
