@@ -29,8 +29,7 @@ import {
   zip,
 } from "@opencreek/deno-std-collections"
 import { error } from "."
-import { AsyncChainBase } from "./collections/async/AsyncChainBase"
-import { asyncChain } from "./collections/async/AsyncChain"
+import { AsyncChain, asyncChain } from "./collections/AsyncChain"
 
 export type PairSplit<T> = T extends [infer F, infer L]
   ? [Chain<F>, Chain<L>]
@@ -327,7 +326,7 @@ export class Chain<T> implements Iterable<T> {
       index: number,
       array: ReadonlyArray<T>,
     ) => Promise<boolean>,
-  ): AsyncChainBase<T> {
+  ): AsyncChain<T> {
     return this.async().filter(predicate)
   }
 
@@ -469,7 +468,7 @@ export class Chain<T> implements Iterable<T> {
 
   mapAsync<U>(
     transformer: (el: T, index: number, array: ReadonlyArray<T>) => Promise<U>,
-  ): AsyncChainBase<U> {
+  ): AsyncChain<U> {
     return this.async().map(transformer)
   }
 
