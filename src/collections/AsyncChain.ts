@@ -31,8 +31,8 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
     this._value = null
   }
 
-  protected startCalclulation() {
-    this._value = this.calculate()
+  protected startCalculation() {
+    this._value = this._value ?? this.calculate()
   }
 
   [Symbol.toStringTag] = "AsyncChain"
@@ -47,7 +47,7 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
       | null
       | undefined,
   ): Promise<TResult1 | TResult2> {
-    return await this.calculate().then(onfulfilled, onrejected)
+    return await this.await().then(onfulfilled, onrejected)
   }
 
   async catch<TResult = never>(
@@ -69,7 +69,10 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   abstract calculate(): Promise<Chain<T>>
 
   async await(): Promise<Chain<T>> {
-    return (await this._value) ?? (await this.calculate())
+    void this.startCalculation()
+    return (
+      (await this._value) ?? error("No promise  after starting calculation")
+    )
   }
 
   async value(): Promise<ReadonlyArray<T>> {
@@ -131,28 +134,54 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
     return new SliceAsyncChain(this, -num)
   }
 
-  dropLastWhile(predicate: (el: T) => boolean): AsyncChain<T> {
+  dropLastWhile(
+    predicate: (el: T) => Promise<boolean> | boolean,
+  ): AsyncChain<T> {
     // TODO(mr) efficiency lol
-    return new DropWhileAsyncChain(this.reverse(), predicate).reverse()
+    return new DropLastWhileAsyncChain(this, predicate)
   }
 
-  dropWhile(predicate: (el: T) => boolean): AsyncChain<T> {
+  dropWhile(predicate: (el: T) => Promise<boolean> | boolean): AsyncChain<T> {
     return new DropWhileAsyncChain(this, predicate)
   }
 
   async every(
-    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean,
+    predicate: (
+      el: T,
+      index: number,
+      array: ReadonlyArray<T>,
+    ) => Promise<boolean> | boolean,
   ): Promise<boolean>
   async every(
-    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean,
+    predicate: (
+      el: T,
+      index: number,
+      array: ReadonlyArray<T>,
+    ) => Promise<boolean> | boolean,
   ): Promise<boolean> {
-    return (await this.await()).every(predicate)
+    const val = await this.value()
+    for (let i = 0; i < val.length; i++) {
+      if (!(await predicate(val[i], i, val))) {
+        return false
+      }
+    }
+    return true
   }
 
   async some(
-    predicate: (value: T, index: number, array: ReadonlyArray<T>) => boolean,
+    predicate: (
+      value: T,
+      index: number,
+      array: ReadonlyArray<T>,
+    ) => Promise<boolean> | boolean,
   ): Promise<boolean> {
-    return (await this.await()).some(predicate)
+    const val = await this.value()
+    for (let i = 0; i < val.length; i++) {
+      if (await predicate(val[i], i, val)) {
+        return true
+      }
+    }
+    return false
   }
 
   async first(): Promise<T> {
@@ -197,38 +226,82 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
     predicate: (el: T, index: number, array: ReadonlyArray<T>) => el is S,
   ): Promise<S | undefined>
   async find(
-    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean,
+    predicate: (
+      el: T,
+      index: number,
+      array: ReadonlyArray<T>,
+    ) => Promise<boolean> | boolean,
   ): Promise<T | undefined>
   async find(
-    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean,
+    predicate: (
+      el: T,
+      index: number,
+      array: ReadonlyArray<T>,
+    ) => Promise<boolean> | boolean,
   ): Promise<T | undefined> {
-    return (await this.await()).find(predicate)
+    const index = await this.findIndex(predicate)
+    if (index == undefined) return undefined
+    return (await this.value())[index]
   }
 
   async findIndex(
-    predicate: (el: T, index: number, array: ReadonlyArray<T>) => boolean,
+    predicate: (
+      el: T,
+      index: number,
+      array: ReadonlyArray<T>,
+    ) => Promise<boolean> | boolean,
   ): Promise<number | undefined> {
-    return (await this.await()).findIndex(predicate)
+    const val = await this.value()
+    for (let i = 0; i < val.length; i++) {
+      if (await predicate(val[i], i, val)) {
+        return i
+      }
+    }
+    return undefined
   }
 
-  async findLast(predicate: (el: T) => boolean): Promise<T | undefined> {
-    return (await this.await()).findLast(predicate)
+  async findLast(
+    predicate: (el: T) => Promise<boolean> | boolean,
+  ): Promise<T | undefined> {
+    const index = await this.findLastIndex(predicate)
+    if (index == undefined) return undefined
+    return (await this.value())[index]
   }
 
   async findLastIndex(
-    predicate: (el: T) => boolean,
+    predicate: (el: T) => Promise<boolean> | boolean,
   ): Promise<number | undefined> {
-    return (await this.await()).findLastIndex(predicate)
+    const val = await this.value()
+    for (let i = val.length - 1; i >= 0; i--) {
+      if (await predicate(val[i])) {
+        return i
+      }
+    }
+    return undefined
   }
 
-  async findSingle(predicate: (el: T) => boolean): Promise<T | undefined> {
-    return (await this.await()).findSingle(predicate)
+  async findSingle(
+    predicate: (el: T) => Promise<boolean> | boolean,
+  ): Promise<T | undefined> {
+    const first = await this.findIndex(predicate)
+    if (first == undefined) return undefined
+
+    const last = await this.findLastIndex(predicate)
+
+    if (first != last) return undefined
+
+    return (await this.value())[last]
   }
 
   async firstNotNullishOf<O>(
-    selector: (item: T) => O | undefined | null,
+    selector: (item: T) => Promise<O | undefined | null> | O | undefined | null,
   ): Promise<NonNullable<O> | undefined> {
-    return (await this.await()).firstNotNullishOf(selector)
+    const val = await this.value()
+    for (let i = 0; i < val.length; i++) {
+      const res = await selector(val[i])
+      if (res != null) return res
+    }
+    return undefined
   }
 
   flatten(): FlattenAsyncChain<T> {
@@ -243,7 +316,7 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
       el: T,
       index: number,
       array: ReadonlyArray<T>,
-    ) => ReadonlyArray<U>,
+    ) => Promise<ReadonlyArray<U>> | ReadonlyArray<U>,
   ): FlattenAsyncChain<U>
   flatMap<U>(
     transformer: (el: T, index: number, array: ReadonlyArray<T>) => Set<U>,
@@ -267,11 +340,15 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
       el: T,
       index: number,
       array: ReadonlyArray<T>,
-    ) => Chain<U> | ReadonlyArray<U> | Set<U> | AsyncChain<U>,
-  ): FlattenAsyncChain<U> {
+    ) =>
+      | Chain<U>
+      | ReadonlyArray<U>
+      | Set<U>
+      | AsyncChain<U>
+      | Promise<ReadonlyArray<U>>,
+  ): AsyncChain<U> {
     const mapped = this.map(transformer)
-    // @ts-expect-error trust me bro
-    return mapped.flatten()
+    return mapped.flatten() as unknown as AsyncChain<U>
   }
 
   async forEach(
@@ -344,32 +421,71 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
     return new MappingAsyncChain(this, transformer)
   }
 
-  mapNotNullish<O>(transformer: (el: T) => O): AsyncChain<NonNullable<O>> {
+  mapNotNullish<O>(
+    transformer: (el: T) => Promise<O> | O,
+  ): AsyncChain<NonNullable<O>> {
     return this.map(transformer).filterNotNullish()
   }
 
-  async maxBy(selector: (el: T) => string): Promise<T | undefined>
-  async maxBy(selector: (el: T) => bigint): Promise<T | undefined>
-  async maxBy(selector: (el: T) => number): Promise<T | undefined>
-  async maxBy(selector: (el: T) => Date): Promise<T | undefined>
   async maxBy(
-    selector: (el: T) => Date | number | bigint | string,
+    selector: (el: T) => Promise<string> | string,
+  ): Promise<T | undefined>
+  async maxBy(
+    selector: (el: T) => Promise<bigint> | bigint,
+  ): Promise<T | undefined>
+  async maxBy(
+    selector: (el: T) => Promise<number> | number,
+  ): Promise<T | undefined>
+  async maxBy(selector: (el: T) => Promise<Date> | Date): Promise<T | undefined>
+  async maxBy(
+    selector: (
+      el: T,
+    ) =>
+      | Date
+      | number
+      | bigint
+      | string
+      | Promise<string | bigint | number | Date>,
   ): Promise<T | undefined> {
-    // this is save because maxBy is overloaded too
-    return (await this.await()).maxBy(selector as (el: T) => string)
+    let max: number | string | bigint | Date | undefined
+    let ret: T | undefined
+
+    for (const elem of await this.value()) {
+      const elemValue = await selector(elem)
+      if (max == null || elemValue > max) {
+        max = elemValue
+        ret = elem
+      }
+    }
+    return ret
   }
 
-  async maxOf(selector: (el: T) => bigint): Promise<bigint | undefined>
-  async maxOf(selector: (el: T) => number): Promise<number | undefined>
-  async maxOf(selector: (el: T) => string): Promise<string | undefined>
-  async maxOf(selector: (el: T) => Date): Promise<Date | undefined>
   async maxOf(
-    selector: (el: T) => bigint | number | string | Date,
+    selector: (el: T) => Promise<bigint> | bigint,
+  ): Promise<bigint | undefined>
+  async maxOf(
+    selector: (el: T) => Promise<number> | number,
+  ): Promise<number | undefined>
+  async maxOf(
+    selector: (el: T) => Promise<string> | string,
+  ): Promise<string | undefined>
+  async maxOf(
+    selector: (el: T) => Promise<Date> | Date,
+  ): Promise<Date | undefined>
+  async maxOf(
+    selector: (
+      el: T,
+    ) =>
+      | bigint
+      | number
+      | string
+      | Date
+      | Promise<string | bigint | number | Date>,
   ): Promise<bigint | number | string | Date | undefined> {
-    return (await this.await()).maxOf(
-      // TODO(mr)
-      // @ts-expect-error
-      selector as (el: T) => bigint | number | string | Date,
+    return (
+      (await this.map(selector))
+        // We need to cast, because of the overloads. We now it's safe because of our overloads though
+        .maxOf((it) => it as string)
     )
   }
 
@@ -377,27 +493,65 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
     return (await this.await()).maxWith(comparator)
   }
 
-  async minBy(selector: (el: T) => number): Promise<T | undefined>
-  async minBy(selector: (el: T) => string): Promise<T | undefined>
-  async minBy(selector: (el: T) => bigint): Promise<T | undefined>
-  async minBy(selector: (el: T) => Date): Promise<T | undefined>
   async minBy(
-    selector: (el: T) => Date | number | bigint | string,
+    selector: (el: T) => Promise<string> | string,
+  ): Promise<T | undefined>
+  async minBy(
+    selector: (el: T) => Promise<bigint> | bigint,
+  ): Promise<T | undefined>
+  async minBy(
+    selector: (el: T) => Promise<number> | number,
+  ): Promise<T | undefined>
+  async minBy(selector: (el: T) => Promise<Date> | Date): Promise<T | undefined>
+  async minBy(
+    selector: (
+      el: T,
+    ) =>
+      | Date
+      | number
+      | bigint
+      | string
+      | Promise<string | bigint | number | Date>,
   ): Promise<T | undefined> {
-    return (await this.await()).minBy(selector as (el: T) => string)
+    let max: number | string | bigint | Date | undefined
+    let ret: T | undefined
+
+    for (const elem of await this.value()) {
+      const elemValue = await selector(elem)
+      if (max == null || elemValue < max) {
+        max = elemValue
+        ret = elem
+      }
+    }
+    return ret
   }
 
-  async minOf(selector: (el: T) => bigint): Promise<bigint | undefined>
-  async minOf(selector: (el: T) => number): Promise<number | undefined>
-  async minOf(selector: (el: T) => string): Promise<string | undefined>
-  async minOf(selector: (el: T) => Date): Promise<Date | undefined>
   async minOf(
-    selector: (el: T) => bigint | number | string | Date,
+    selector: (el: T) => Promise<bigint> | bigint,
+  ): Promise<bigint | undefined>
+  async minOf(
+    selector: (el: T) => Promise<number> | number,
+  ): Promise<number | undefined>
+  async minOf(
+    selector: (el: T) => Promise<string> | string,
+  ): Promise<string | undefined>
+  async minOf(
+    selector: (el: T) => Promise<Date> | Date,
+  ): Promise<Date | undefined>
+  async minOf(
+    selector: (
+      el: T,
+    ) =>
+      | bigint
+      | number
+      | string
+      | Date
+      | Promise<string | bigint | number | Date>,
   ): Promise<bigint | number | string | Date | undefined> {
-    return (await this.await()).minOf(
-      // TODO(mr)
-      // @ts-expect-error
-      selector as (el: T) => bigint | number | string | Date,
+    return (
+      (await this.map(selector))
+        // We need to cast, because of the overloads. We now it's safe because of our overloads though
+        .minOf((it) => it as string)
     )
   }
 
@@ -408,13 +562,21 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   partition(
     predicate: (el: T) => Promise<boolean> | boolean,
   ): [AsyncChain<T>, AsyncChain<T>] {
-    return [this.filter(predicate), this.filter((el) => !predicate(el))]
+    return [this.filter(predicate), this.filter(async (el) => !await predicate(el))]
   }
 
   permutations(): AsyncChain<ReadonlyArray<T>> {
     return new PermutationsAsyncChain(this)
   }
 
+  async reduce(
+    reducer: (
+      accumulator: AsyncChain<T>,
+      current: T,
+      index: number,
+      array: ReadonlyArray<T>,
+    ) => AsyncChain<T>,
+  ): Promise<AsyncChain<T>>
   async reduce(
     reducer: (
       accumulator: T,
@@ -705,18 +867,12 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
     return new UnionAsyncChain(this, arrays)
   }
 
-  unzip(): PairSplit<T> {
-    // TODO(mr)
-    // @ts-expect-error
-    const [left, right] = unzip(this.val as unknown as ReadonlyArray<[T, T]>)
-    return [new Chain(left), new Chain(right)] as PairSplit<T>
+  async unzip(): Promise<PairSplit<T>> {
+    return (await this.await()).unzip()
   }
 
-  withoutAll(values: readonly T[]): Chain<T> {
-    // TODO(mr)
-    // @ts-expect-error
-    const ret = withoutAll(this.val, values)
-    return new Chain(ret)
+  withoutAll(values: readonly T[] | Chain<T> | AsyncChain<T>): AsyncChain<T> {
+    return new WithoutAllAsyncChain(this, values)
   }
 
   zip<U>(withArray: readonly U[] | AsyncChain<U>): AsyncChain<[T, U]> {
@@ -727,7 +883,7 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
 export class SimpleAsyncChain<T> extends AsyncChain<T> {
   constructor(private val: ReadonlyArray<Promise<T> | T>) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -741,7 +897,7 @@ export class ChunkingAsyncChain<T> extends AsyncChain<T[]> {
     private size: number,
   ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T[]>> {
@@ -756,7 +912,7 @@ export class ConcatenatingAsyncChain<T> extends AsyncChain<T> {
     private other: AsyncChain<T> | Iterable<T>,
   ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -772,7 +928,7 @@ export class DistinctAsyncChain<T, D> extends AsyncChain<T> {
     private selector: (el: T) => D,
   ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -790,21 +946,47 @@ export class DropWhileAsyncChain<T> extends AsyncChain<T> {
     ) => Promise<boolean> | boolean,
   ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
-    const values = await this.val.value()
-    const ret: Array<T> = []
-    for (let i = 0; i < values.length; i++) {
-      if (!(await this.predicate(values[i], i, values))) {
+    const values = await this.val.await()
+    let count = 0
+    for (let i = 0; i < values.value().length; i++) {
+      if (!(await this.predicate(values.value()[i], i, values.value()))) {
         break
-      } else {
-        ret.push(values[i])
       }
+      count++
     }
 
-    return new Chain(ret)
+    return values.drop(count)
+  }
+}
+
+export class DropLastWhileAsyncChain<T> extends AsyncChain<T> {
+  constructor(
+    private val: AsyncChain<T>,
+    private predicate: (
+      el: T,
+      index: number,
+      array: ReadonlyArray<T>,
+    ) => Promise<boolean> | boolean,
+  ) {
+    super()
+    this.startCalculation()
+  }
+
+  async calculate(): Promise<Chain<T>> {
+    const values = await this.val.await()
+    let count = 0
+    for (let i = values.value().length - 1; i >= 0; i--) {
+      if (!(await this.predicate(values.value()[i], i, values.value()))) {
+        break
+      }
+      count++
+    }
+
+    return values.dropLast(count)
   }
 }
 
@@ -832,7 +1014,7 @@ export class FilterAsyncChain<T> extends AsyncChain<T> {
     ) => Promise<boolean> | boolean,
   ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -842,6 +1024,7 @@ export class FilterAsyncChain<T> extends AsyncChain<T> {
     return current.filter((_, index) => mask[index])
   }
 }
+
 type Distribute<U> = U extends any ? { type: U } : never
 
 type FlattenAsyncType<T> = Distribute<T> extends {
@@ -851,13 +1034,27 @@ type FlattenAsyncType<T> = Distribute<T> extends {
   : T
 
 export class FlattenAsyncChain<T> extends AsyncChain<FlattenAsyncType<T>> {
-  constructor(private val: AsyncChain<T>) {
+  constructor(
+    private val:
+      | AsyncChain<T>
+      | AsyncChain<Chain<T>>
+      | AsyncChain<ReadonlyArray<T>>
+      | AsyncChain<AsyncChain<T>>,
+  ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<FlattenAsyncType<T>>> {
-    return (await this.val.await()).flatten() as Chain<FlattenAsyncType<T>>
+    const flattend = await this.val.map(async (el) =>
+      el instanceof AsyncChain
+        ? await el.value()
+        : el instanceof Chain
+        ? el.value()
+        : el,
+    )
+
+    return flattend.flatten() as Chain<FlattenAsyncType<T>>
   }
 }
 
@@ -867,7 +1064,7 @@ export class IntersectionAsyncChain<T> extends AsyncChain<T> {
     private withArrays: ReadonlyArray<readonly T[] | AsyncChain<T>>,
   ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -903,7 +1100,7 @@ export class MappingAsyncChain<T, U> extends AsyncChain<U> {
     ) => U | Promise<U>,
   ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<U>> {
@@ -919,7 +1116,7 @@ export class MappingAsyncChain<T, U> extends AsyncChain<U> {
 export class PermutationsAsyncChain<T> extends AsyncChain<ReadonlyArray<T>> {
   constructor(private val: AsyncChain<T>) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<ReadonlyArray<T>>> {
@@ -930,7 +1127,7 @@ export class PermutationsAsyncChain<T> extends AsyncChain<ReadonlyArray<T>> {
 export class ReversingAsyncChain<T> extends AsyncChain<T> {
   constructor(private val: AsyncChain<T>) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -945,7 +1142,7 @@ export class RunningReduceAsyncChain<T, O> extends AsyncChain<O> {
     private initialValue: O,
   ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<O>> {
@@ -969,7 +1166,7 @@ export class SliceAsyncChain<T> extends AsyncChain<T> {
     private end?: number,
   ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1008,7 +1205,7 @@ export class SortByAsyncChain<T> extends AsyncChain<T> {
       | number,
   ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1025,7 +1222,7 @@ export class SortingAsyncChain<T> extends AsyncChain<T> {
     private compareFn?: (a: T, b: T) => number,
   ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1043,7 +1240,7 @@ export class TakeWhileAsyncChain<T> extends AsyncChain<T> {
     ) => Promise<boolean> | boolean,
   ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1067,7 +1264,7 @@ export class UnionAsyncChain<T> extends AsyncChain<T> {
     private withArrays: ReadonlyArray<readonly T[] | AsyncChain<T>>,
   ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1101,7 +1298,7 @@ export class ZippingAsyncChain<T, U> extends AsyncChain<[T, U]> {
     private withArray: readonly U[] | AsyncChain<U>,
   ) {
     super()
-    this.startCalclulation()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<[T, U]>> {
@@ -1110,6 +1307,26 @@ export class ZippingAsyncChain<T, U> extends AsyncChain<[T, U]> {
         ? await this.withArray.value()
         : this.withArray
     return (await this.val.await()).zip(other)
+  }
+}
+
+export class WithoutAllAsyncChain<T> extends AsyncChain<T> {
+  constructor(
+    private val: AsyncChain<T>,
+    private without: readonly T[] | AsyncChain<T> | Chain<T>,
+  ) {
+    super()
+    this.startCalculation()
+  }
+
+  async calculate(): Promise<Chain<T>> {
+    const other =
+      this.without instanceof AsyncChain
+        ? await this.without.value()
+        : this.without instanceof Chain
+        ? this.without.value()
+        : this.without
+    return (await this.val.await()).withoutAll(other)
   }
 }
 
@@ -1270,6 +1487,7 @@ export class AssociatingAsyncObjectChain<
     return objChain(entries)
   }
 }
+
 export class GroupingAsyncObjectChain<
   K extends string | number | symbol,
   T,
