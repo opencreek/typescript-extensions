@@ -150,7 +150,10 @@ test("All the functions once, so they don't form infinite loops", async (t) => {
   t.snapshot(await c.minBy(withDelay((it) => it * 3)), "minBy")
   t.snapshot(await c.minOf(withDelay((it) => it * 3)), "minOf")
 
-  t.snapshot(await asyncChain(c.partition(withDelay((it) => it % 2 == 1))), "partition")
+  t.snapshot(
+    await asyncChain(c.partition(withDelay((it) => it % 2 == 1))),
+    "partition",
+  )
 
   // .maxWith
   // .minWith
@@ -163,8 +166,11 @@ test("All the functions once, so they don't form infinite loops", async (t) => {
   t.true(await c.some(withDelay((it) => it > 3)))
 
   t.snapshot(await c.first(), "first")
-  t.snapshot(await c.firstNotNullishOf(withDelay((it) => (it < 3 ? null : it))), "firstNotNullishOf")
-  t.snapshot(await c.last(),   "last")
+  t.snapshot(
+    await c.firstNotNullishOf(withDelay((it) => (it < 3 ? null : it))),
+    "firstNotNullishOf",
+  )
+  t.snapshot(await c.last(), "last")
   t.snapshot(await c.findIndex(withDelay((it) => it == 3)), "findIndex")
   t.snapshot(await c.findSingle(withDelay((it) => it % 3 == 0)), "findSingle 1")
   t.snapshot(await c.findSingle(withDelay((it) => it == 3)), "findSingle 2")
@@ -174,7 +180,7 @@ test("All the functions once, so they don't form infinite loops", async (t) => {
 
   t.snapshot(await c.intersect(asyncChain([-1, 1, 2, 3])), "intersect")
 
-  t.snapshot(await c.join(","),  "join")
+  t.snapshot(await c.join(","), "join")
   t.snapshot(await c.mapJoin(",", (it) => it + "^"), "mapJoin")
 })
 

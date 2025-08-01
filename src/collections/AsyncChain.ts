@@ -101,7 +101,6 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
     return objChain(entries) as IfString<T, ObjectChain<string, U>>
   }
 
-  // TODO(mr)
   chunk(size: number): AsyncChain<T[]> {
     return new ChunkingAsyncChain(this, size)
   }
@@ -137,7 +136,6 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   dropLastWhile(
     predicate: (el: T) => Promise<boolean> | boolean,
   ): AsyncChain<T> {
-    // TODO(mr) efficiency lol
     return new DropLastWhileAsyncChain(this, predicate)
   }
 
@@ -562,7 +560,10 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   partition(
     predicate: (el: T) => Promise<boolean> | boolean,
   ): [AsyncChain<T>, AsyncChain<T>] {
-    return [this.filter(predicate), this.filter(async (el) => !await predicate(el))]
+    return [
+      this.filter(predicate),
+      this.filter(async (el) => !(await predicate(el))),
+    ]
   }
 
   permutations(): AsyncChain<ReadonlyArray<T>> {
@@ -855,8 +856,7 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   }
 
   takeLastWhile(predicate: (el: T) => boolean): AsyncChain<T> {
-    // TODO(mr) efficiency lol
-    return new TakeWhileAsyncChain(this.reverse(), predicate).reverse()
+    return new TakeLastWhileAsyncChain(this, predicate)
   }
 
   takeWhile(predicate: (el: T) => boolean): AsyncChain<T> {
@@ -1255,6 +1255,34 @@ export class TakeWhileAsyncChain<T> extends AsyncChain<T> {
     }
 
     return new Chain(ret)
+  }
+}
+
+export class TakeLastWhileAsyncChain<T> extends AsyncChain<T> {
+  constructor(
+    private val: AsyncChain<T>,
+    private predicate: (
+      el: T,
+      index: number,
+      array: ReadonlyArray<T>,
+    ) => Promise<boolean> | boolean,
+  ) {
+    super()
+    this.startCalculation()
+  }
+
+  async calculate(): Promise<Chain<T>> {
+    const values = await this.val.value()
+    const ret: Array<T> = []
+    for (let i = values.length; i < 0; i++) {
+      if (await this.predicate(values[i], i, values)) {
+        ret.push(values[i])
+      } else {
+        break
+      }
+    }
+
+    return new Chain(ret.reverse())
   }
 }
 
