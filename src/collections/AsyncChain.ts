@@ -71,7 +71,7 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   async await(): Promise<Chain<T>> {
     void this.startCalculation()
     return (
-      (await this._value) ?? error("No promise  after starting calculation")
+      (await this._value) ?? error("No promise after starting calculation")
     )
   }
 
