@@ -509,13 +509,13 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
       | string
       | Promise<string | bigint | number | Date>,
   ): Promise<T | undefined> {
-    let max: number | string | bigint | Date | undefined
+    let min: number | string | bigint | Date | undefined
     let ret: T | undefined
 
     for (const elem of await this.value()) {
       const elemValue = await selector(elem)
-      if (max == null || elemValue < max) {
-        max = elemValue
+      if (min == null || elemValue < min) {
+        min = elemValue
         ret = elem
       }
     }
