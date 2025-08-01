@@ -1462,15 +1462,21 @@ export abstract class AsyncObjectChain<
     )
   }
 
-  filterKeys(filter: (key: K) => boolean): AsyncObjectChain<K, T> {
+  filterKeys(
+    filter: (key: K) => Promise<boolean> | boolean,
+  ): AsyncObjectChain<K, T> {
     return new FilteringAsyncObjectChain(this, (k, _) => filter(k))
   }
 
-  filterValues(filter: (value: T) => boolean): AsyncObjectChain<K, T> {
+  filterValues(
+    filter: (value: T) => Promise<boolean> | boolean,
+  ): AsyncObjectChain<K, T> {
     return new FilteringAsyncObjectChain(this, (_, v) => filter(v))
   }
 
-  filterEntries(filter: (key: K, value: T) => boolean): AsyncObjectChain<K, T> {
+  filterEntries(
+    filter: (key: K, value: T) => Promise<boolean> | boolean,
+  ): AsyncObjectChain<K, T> {
     return new FilteringAsyncObjectChain(this, filter)
   }
 }
