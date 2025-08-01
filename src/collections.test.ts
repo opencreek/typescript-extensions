@@ -186,41 +186,37 @@ test("chain::mapAsync should be chainable into an async chain", async (t) => {
   t.deepEqual(result, [15, 9, 3])
 })
 
-test("The Touched Type shoud work correctly with object chain", (t) => {
-  type Touched<Entity> =
-    | undefined
-    | true
-    | (Entity extends Record<string, unknown>
-        ? {
-            [K in keyof Entity]?: Touched<Entity[K]>
-          }
-        : never)
-  type ExcludeNull<Value> = Value extends null
-    ? never
-    : Value extends ReadonlyArray<infer Elem>
-    ? ReadonlyArray<ExcludeNull<Elem>>
-    : Value extends Array<infer Elem>
-    ? Array<ExcludeNull<Elem>>
-    : Value extends Record<string, unknown>
-    ? {
-        [Key in keyof Value]: ExcludeNull<Value[Key]>
-      }
-    : Exclude<Value, null>
-
+test("The Touched Type should work correctly with object chain", (t) => {
   // we do the iife here, so TS doesn't narrow the type further
-  const touched: Touched<ExcludeNull<Array<{ id: number }>>> = (
-    (() => {
-      return { 0: { id: true } } as unknown as Touched<
-        ExcludeNull<Array<{ id: number }>>
-      >
-    }) as () => Touched<ExcludeNull<Array<{ id: number }>>>
-  )()
+  const result = testTouchedType([{ id: true }] as unknown as Touched<unknown>)
 
-  if (touched !== true) {
-    const c = objChain(touched)
-
-    const result = c?.mapKeys((it) => it.toString() + "-mapped").value()
-
-    t.deepEqual(result, { "0-mapped": { id: true } })
-  }
+  t.deepEqual(result, { "0-mapped": { id: true } })
 })
+
+type Touched<Entity> =
+  | undefined
+  | true
+  | (Entity extends ReadonlyArray<unknown>
+      ? {
+          [X in number]?: Touched<Entity[number]>
+        }
+      : Entity extends Array<unknown>
+      ? {
+          [X in number]?: Touched<Entity[number]>
+        }
+      : Entity extends Record<string, unknown>
+      ? {
+          [K in keyof Entity]?: Touched<Entity[K]>
+        }
+      : never)
+
+function testTouchedType<
+  Entity extends Array<unknown> | ReadonlyArray<unknown>,
+>(touched: Touched<Entity>) {
+  if (touched !== true) {
+    return objChain(touched)
+      ?.mapKeys((it) => it.toString() + "-mapped")
+      .value()
+  }
+  return false
+}
