@@ -482,7 +482,7 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   ): Promise<bigint | number | string | Date | undefined> {
     return (
       (await this.map(selector))
-        // We need to cast, because of the overloads. We now it's safe because of our overloads though
+        // We need to cast, because of the overloads. We know it's safe because of our overloads though
         .maxOf((it) => it as string)
     )
   }
