@@ -1183,6 +1183,7 @@ export class SlidingWindowAsyncChain<T> extends AsyncChain<ReadonlyArray<T>> {
     },
   ) {
     super()
+    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<ReadonlyArray<T>>> {
