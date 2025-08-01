@@ -902,7 +902,7 @@ export class ChunkingAsyncChain<T> extends AsyncChain<T[]> {
 
   async calculate(): Promise<Chain<T[]>> {
     const chunks = chunk(await this.val.value(), this.size)
-    return new SimpleAsyncChain(chunks)
+    return new Chain(chunks)
   }
 }
 
