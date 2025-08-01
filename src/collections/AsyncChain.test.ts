@@ -143,6 +143,12 @@ test("All the functions once, so they don't form infinite loops", async (t) => {
 
   t.snapshot(result.value(), "long chain")
 
+  t.snapshot(await c.takeWhile(withDelay((it) => it < 3)), "take while")
+  t.snapshot(
+    await c.takeLastWhile(withDelay((it) => it > 3)),
+    "take last while",
+  )
+
   t.snapshot(await c.zip([2, 1]).unzip(), "zip")
 
   t.snapshot(await c.maxBy(withDelay((it) => it * 3)), "maxBy")
@@ -154,9 +160,6 @@ test("All the functions once, so they don't form infinite loops", async (t) => {
     await asyncChain(c.partition(withDelay((it) => it % 2 == 1))),
     "partition",
   )
-
-  // .maxWith
-  // .minWith
 
   await c.forEach(async (it) => {
     await sleep(0)

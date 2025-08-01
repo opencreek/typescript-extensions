@@ -854,11 +854,13 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
     return (await this.map(selector).await()).sumOf((it) => it)
   }
 
-  takeLastWhile(predicate: (el: T) => boolean): AsyncChain<T> {
+  takeLastWhile(
+    predicate: (el: T) => Promise<boolean> | boolean,
+  ): AsyncChain<T> {
     return new TakeLastWhileAsyncChain(this, predicate)
   }
 
-  takeWhile(predicate: (el: T) => boolean): AsyncChain<T> {
+  takeWhile(predicate: (el: T) => Promise<boolean> | boolean): AsyncChain<T> {
     return new TakeWhileAsyncChain(this, predicate)
   }
 
