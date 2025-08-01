@@ -284,7 +284,7 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
 
     const last = await this.findLastIndex(predicate)
 
-    if (first != last) return undefined
+    if (first !== last) return undefined
 
     return (await this.value())[last]
   }
