@@ -1274,7 +1274,7 @@ export class TakeLastWhileAsyncChain<T> extends AsyncChain<T> {
   async calculate(): Promise<Chain<T>> {
     const values = await this.val.value()
     const ret: Array<T> = []
-    for (let i = values.length; i < 0; i++) {
+    for (let i = values.length - 1; i >= 0; i--) {
       if (await this.predicate(values[i], i, values)) {
         ret.push(values[i])
       } else {
