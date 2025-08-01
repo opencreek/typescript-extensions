@@ -70,9 +70,7 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
 
   async await(): Promise<Chain<T>> {
     void this.startCalculation()
-    return (
-      (await this._value) ?? error("No promise after starting calculation")
-    )
+    return (await this._value) ?? error("No promise after starting calculation")
   }
 
   async value(): Promise<ReadonlyArray<T>> {
@@ -673,8 +671,9 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
       array: ReadonlyArray<T>,
     ) => O | Promise<O>,
     initial?: O,
-  ): Promise<O> {
-    let ret: O = initial != null ? initial : ((await this.firstOrNull()) as O)
+  ): Promise<O | undefined> {
+    let ret: O | undefined =
+      initial != null ? initial : ((await this.firstOrNull()) as O | undefined)
 
     const values = await this.value()
     for (let i = initial != null ? 0 : 1; i < values.length; i++) {
@@ -1046,7 +1045,7 @@ export class FlattenAsyncChain<T> extends AsyncChain<FlattenAsyncType<T>> {
   }
 
   async calculate(): Promise<Chain<FlattenAsyncType<T>>> {
-    const flattend = await this.val.map(async (el) =>
+    const flattened = await this.val.map(async (el) =>
       el instanceof AsyncChain
         ? await el.value()
         : el instanceof Chain
@@ -1054,7 +1053,7 @@ export class FlattenAsyncChain<T> extends AsyncChain<FlattenAsyncType<T>> {
         : el,
     )
 
-    return flattend.flatten() as Chain<FlattenAsyncType<T>>
+    return flattened.flatten() as Chain<FlattenAsyncType<T>>
   }
 }
 
@@ -1382,7 +1381,8 @@ export abstract class AsyncObjectChain<
   abstract calculate(): Promise<ObjectChain<K, T, Rec>>
 
   async await(): Promise<ObjectChain<K, T, Rec>> {
-    return (await this._value) ?? (await this.calculate())
+    void this.startCalculation()
+    return (await this._value) ?? error("No promise after starting calculation")
   }
 
   async value(): Promise<Rec> {
