@@ -407,7 +407,7 @@ test("runningReduce should accumulate intermediate results", async (t) => {
 
   t.deepEqual(
     await c.runningReduce((acc, it) => acc + it, 0).value(),
-    [0, 1, 3, 6, 10],
+    [1, 3, 6, 10],
   )
 })
 

@@ -565,9 +565,13 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   partition(
     predicate: (el: T) => Promise<boolean> | boolean,
   ): [AsyncChain<T>, AsyncChain<T>] {
+    // Evaluate the predicate exactly once per element. The shared `evaluated`
+    // chain is memoized, so both branches reuse the same computation instead of
+    // running the (possibly async / side-effecting) predicate twice.
+    const evaluated = this.map(async (el) => [el, await predicate(el)] as const)
     return [
-      this.filter(predicate),
-      this.filter(async (el) => !(await predicate(el))),
+      evaluated.filter(([, keep]) => keep).map(([el]) => el),
+      evaluated.filter(([, keep]) => !keep).map(([el]) => el),
     ]
   }
 
@@ -1142,14 +1146,13 @@ export class RunningReduceAsyncChain<T, O> extends AsyncChain<O> {
   }
 
   async calculate(): Promise<Chain<O>> {
-    const ret = await this.val.reduce(
-      async (acc, it) => {
-        const elem = acc[acc.length - 1]
-        const next = await this.reducer(elem, it)
-        return [...acc, next]
-      },
-      [this.initialValue],
-    )
+    const values = await this.val.value()
+    const ret: Array<O> = []
+    let acc = this.initialValue
+    for (const it of values) {
+      acc = await this.reducer(acc, it)
+      ret.push(acc)
+    }
 
     return chain(ret)
   }
