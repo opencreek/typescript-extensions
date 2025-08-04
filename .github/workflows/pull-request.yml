@@ -11,7 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-node@main
-      - run: npx auto pr-check --url https://github.com/$GITHUB_REPOSITORY
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - run: pnpx auto pr-check --url https://github.com/$GITHUB_REPOSITORY
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -29,17 +32,12 @@ jobs:
         with:
           path: node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
-      - uses: actions/cache@main
-        if: steps.cache-modules.outputs.cache-hit != 'true'
+      - uses: pnpm/action-setup@v4
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-global
-      - run: npm ci
-        if: steps.cache-modules.outputs.cache-hit != 'true'
-        env:
-          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
-      - run: npm run build
-      - run: npx auto shipit
+          version: 10
+      - run: pnpm install
+      - run: pnpm run build
+      - run: pnpx auto shipit
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
