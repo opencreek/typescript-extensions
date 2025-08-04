@@ -6,15 +6,16 @@ import {
   ObjectChain,
   PairSplit,
 } from "../collections"
-import {
-  chunk,
-  intersect,
-  slidingWindows,
-} from "@opencreek/deno-std-collections"
 import { error } from "../error"
 import { groupEntries } from "./groupEntries"
 
 export type ArrayOrAsyncChain<U> = Chain<U> | ReadonlyArray<U> | AsyncChain<U>
+
+type Callback<T, R> = (
+  el: T,
+  index: number,
+  array: ReadonlyArray<T>,
+) => R | Promise<R>
 
 export function asyncChain<T>(val: Iterable<Promise<T> | T>): AsyncChain<T>
 export function asyncChain<_T>(val: undefined | null): undefined
@@ -25,14 +26,8 @@ export function asyncChain<T>(
   val: Iterable<Promise<T> | T> | undefined | null,
 ): AsyncChain<T> | undefined {
   if (val == null) return undefined
-  return new SimpleAsyncChain(chain(val).value())
-}
-
-async function toArray<U>(
-  val: Iterable<U> | AsyncChain<U>,
-): Promise<ReadonlyArray<U>> {
-  if (val instanceof AsyncChain) return val.value()
-  return chain(val).value()
+  const values = chain(val).value()
+  return new AsyncChain(async () => new Chain(await Promise.all(values)))
 }
 
 export function asyncObjChain<
@@ -42,25 +37,62 @@ export function asyncObjChain<
 >(
   val: Rec | ObjectChain<K, T, Rec> | Promise<Rec | ObjectChain<K, T, Rec>>,
 ): AsyncObjectChain<K, T, Rec> {
-  return new SimpleAsyncObjectChain(val)
+  return new AsyncObjectChain(async () => {
+    const resolved = await val
+    if (resolved instanceof ObjectChain) return resolved
+    return objChain(resolved) as unknown as ObjectChain<K, T, Rec>
+  })
 }
 
-export abstract class AsyncChain<T> implements Promise<Chain<T>> {
-  private _value: Promise<Chain<T>> | null
+// The only place callbacks are fanned out: all at once, results in input order.
+// Each call is wrapped, so a callback that throws synchronously still lets the others run.
+function resolveAll<T, R>(
+  values: ReadonlyArray<T>,
+  fn: Callback<T, R>,
+): Promise<Array<R>> {
+  return Promise.all(values.map(async (el, i, arr) => fn(el, i, arr)))
+}
 
-  protected constructor() {
-    this._value = null
+// Number of leading (or trailing) elements matching the predicate, evaluated one at a time.
+async function countWhile<T>(
+  values: ReadonlyArray<T>,
+  predicate: Callback<T, boolean>,
+  fromEnd = false,
+): Promise<number> {
+  let count = 0
+  for (let n = 0; n < values.length; n++) {
+    const i = fromEnd ? values.length - 1 - n : n
+    if (!(await predicate(values[i], i, values))) break
+    count++
+  }
+  return count
+}
+
+async function toArray<U>(
+  val: Iterable<U> | AsyncChain<U>,
+): Promise<ReadonlyArray<U>> {
+  if (val instanceof AsyncChain) return val.value()
+  return chain(val).value()
+}
+
+/**
+ * A lazily computed, memoised promise: `source` runs on the first await (or
+ * then/catch/finally/value/...), and every later await shares its result.
+ */
+abstract class Lazy<V> implements Promise<V> {
+  private memo: Promise<V> | undefined
+
+  protected constructor(private readonly source: () => Promise<V>) {}
+
+  abstract readonly [Symbol.toStringTag]: string
+
+  await(): Promise<V> {
+    return (this.memo ??= this.source())
   }
 
-  protected startCalculation() {
-    this._value = this._value ?? this.calculate()
-  }
-
-  [Symbol.toStringTag] = "AsyncChain"
-
-  async then<TResult1 = Chain<T>, TResult2 = never>(
+  then<TResult1 = V, TResult2 = never>(
     onfulfilled?:
-      | ((value: Chain<T>) => TResult1 | PromiseLike<TResult1>)
+      | ((value: V) => TResult1 | PromiseLike<TResult1>)
       | null
       | undefined,
     onrejected?:
@@ -68,27 +100,36 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
       | null
       | undefined,
   ): Promise<TResult1 | TResult2> {
-    return await this.await().then(onfulfilled, onrejected)
+    return this.await().then(onfulfilled, onrejected)
   }
 
-  async catch<TResult = never>(
+  catch<TResult = never>(
     onrejected?:
       | ((reason: any) => TResult | PromiseLike<TResult>)
       | null
       | undefined,
-  ): Promise<Chain<T> | TResult> {
-    return this.then((it) => it, onrejected)
+  ): Promise<V | TResult> {
+    return this.await().catch(onrejected)
   }
 
-  finally(onfinally?: (() => void) | null | undefined): Promise<Chain<T>> {
+  finally(onfinally?: (() => void) | null | undefined): Promise<V> {
     return this.await().finally(onfinally)
   }
+}
 
-  abstract calculate(): Promise<Chain<T>>
+export class AsyncChain<T> extends Lazy<Chain<T>> {
+  readonly [Symbol.toStringTag] = "AsyncChain"
 
-  async await(): Promise<Chain<T>> {
-    void this.startCalculation()
-    return (await this._value) ?? error("No promise after starting calculation")
+  /** Prefer `asyncChain(...)` or `chain(...).async()`. */
+  constructor(source: () => Promise<Chain<T>>) {
+    super(source)
+  }
+
+  /** A new lazy chain computed from this chain's resolved value. */
+  private derive<U>(
+    derive: (val: Chain<T>) => Chain<U> | Promise<Chain<U>>,
+  ): AsyncChain<U> {
+    return new AsyncChain(async () => derive(await this.await()))
   }
 
   async value(): Promise<ReadonlyArray<T>> {
@@ -106,7 +147,9 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   associateBy<S extends string | number | symbol>(
     selector: (el: T) => S | Promise<S>,
   ): AsyncObjectChain<S, T> {
-    return new AssociatingAsyncObjectChain(this, selector)
+    return new AsyncObjectChain(async () =>
+      objChain(await this.map(async (el) => [await selector(el), el] as const)),
+    )
   }
 
   associateWith<U>(
@@ -118,11 +161,11 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   }
 
   chunk(size: number): AsyncChain<T[]> {
-    return new ChunkingAsyncChain(this, size)
+    return this.derive((it) => it.chunk(size))
   }
 
   concat(other: Iterable<T> | AsyncChain<T>): AsyncChain<T> {
-    return new ConcatenatingAsyncChain(this, other)
+    return this.derive(async (it) => it.concat(await toArray(other)))
   }
 
   distinct(): AsyncChain<T> {
@@ -130,33 +173,43 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   }
 
   distinctBy<D>(selector: (el: T) => D | Promise<D>): AsyncChain<T> {
-    return new DistinctAsyncChain(this, selector)
+    return this.derive(async (it) => {
+      const keys = await resolveAll(it.value(), selector)
+      return it
+        .map((el, i) => [el, keys[i]] as const)
+        .distinctBy(([, key]) => key)
+        .map(([el]) => el)
+    })
   }
 
   drop(num: number): AsyncChain<T> {
-    return new SliceAsyncChain(this, num)
+    return this.derive((it) => it.drop(num))
   }
 
   dropLast(num: number): AsyncChain<T> {
-    return new DerivedAsyncChain(this, (it) => it.dropLast(num))
+    return this.derive((it) => it.dropLast(num))
   }
 
   take(num: number): AsyncChain<T> {
-    return new SliceAsyncChain(this, 0, num)
+    return this.derive((it) => it.take(num))
   }
 
   takeLast(num: number): AsyncChain<T> {
-    return new DerivedAsyncChain(this, (it) => it.takeLast(num))
+    return this.derive((it) => it.takeLast(num))
   }
 
   dropLastWhile(
     predicate: (el: T) => Promise<boolean> | boolean,
   ): AsyncChain<T> {
-    return new DropLastWhileAsyncChain(this, predicate)
+    return this.derive(async (it) =>
+      it.dropLast(await countWhile(it.value(), predicate, true)),
+    )
   }
 
   dropWhile(predicate: (el: T) => Promise<boolean> | boolean): AsyncChain<T> {
-    return new DropWhileAsyncChain(this, predicate)
+    return this.derive(async (it) =>
+      it.drop(await countWhile(it.value(), predicate)),
+    )
   }
 
   async every(
@@ -229,7 +282,10 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
       array: ReadonlyArray<T>,
     ) => Promise<boolean> | boolean,
   ): AsyncChain<T> {
-    return new FilterAsyncChain(this, filter)
+    return this.derive(async (it) => {
+      const keep = await resolveAll(it.value(), filter)
+      return it.filter((_, i) => keep[i])
+    })
   }
 
   filterNotNullish(): AsyncChain<NonNullable<T>> {
@@ -332,7 +388,12 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   }
 
   flatten(): AsyncChain<FlattenAsyncType<T>> {
-    return new FlattenAsyncChain(this)
+    return this.derive(
+      (it) =>
+        it
+          .map((el) => (el instanceof Set ? [...(el as Set<unknown>)] : el))
+          .flatten() as Chain<FlattenAsyncType<T>>,
+    )
   }
 
   flatMap<U>(
@@ -391,7 +452,11 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   groupBy<K extends string | symbol | number>(
     selector: (el: T) => K | Promise<K>,
   ): AsyncObjectChain<K, ReadonlyArray<T>> {
-    return new GroupingAsyncObjectChain(this, selector)
+    return new AsyncObjectChain(async () =>
+      groupEntries(
+        await this.map(async (el) => [await selector(el), el] as const),
+      ),
+    )
   }
 
   async indexOf(
@@ -413,7 +478,9 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   }
 
   intersect(...arrays: Array<Iterable<T> | AsyncChain<T>>): AsyncChain<T> {
-    return new IntersectionAsyncChain(this, arrays)
+    return this.derive(async (it) =>
+      it.intersect(...(await Promise.all(arrays.map(toArray)))),
+    )
   }
 
   async join(separator?: string): Promise<string> {
@@ -445,7 +512,9 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
       array: ReadonlyArray<T>,
     ) => U | Promise<U>,
   ): AsyncChain<U> {
-    return new MappingAsyncChain(this, transformer)
+    return this.derive(
+      async (it) => new Chain(await resolveAll(it.value(), transformer)),
+    )
   }
 
   mapNotNullish<O>(
@@ -600,7 +669,7 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   }
 
   permutations(): AsyncChain<ReadonlyArray<T>> {
-    return new PermutationsAsyncChain(this)
+    return this.derive((it) => it.permutations())
   }
 
   async reduce(
@@ -820,14 +889,22 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   }
 
   reverse(): AsyncChain<T> {
-    return new ReversingAsyncChain(this)
+    return this.derive((it) => it.reverse())
   }
 
   runningReduce<O>(
     reducer: (accumulator: O, current: T) => O | Promise<O>,
     initialValue: O,
   ): AsyncChain<O> {
-    return new RunningReduceAsyncChain(this, reducer, initialValue)
+    return this.derive(async (it) => {
+      const ret: Array<O> = []
+      let acc = initialValue
+      for (const el of it) {
+        acc = await reducer(acc, el)
+        ret.push(acc)
+      }
+      return new Chain(ret)
+    })
   }
 
   async sample(): Promise<T | undefined> {
@@ -835,18 +912,18 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   }
 
   slice(start?: number, end?: number): AsyncChain<T> {
-    return new SliceAsyncChain(this, start, end)
+    return this.derive((it) => it.slice(start, end))
   }
 
   slidingWindows(
     size: number,
     { step, partial }: { step: number; partial: boolean },
   ): AsyncChain<ReadonlyArray<T>> {
-    return new SlidingWindowAsyncChain(this, size, { step, partial })
+    return this.derive((it) => it.slidingWindows(size, { step, partial }))
   }
 
   sort(compareFn?: (a: T, b: T) => number): AsyncChain<T> {
-    return new SortingAsyncChain(this, compareFn)
+    return this.derive((it) => it.sort(compareFn))
   }
 
   sortBy(selector: (el: T) => Date): AsyncChain<T>
@@ -885,7 +962,13 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
       | string
       | number,
   ): AsyncChain<T> {
-    return new SortByAsyncChain(this, selector)
+    return this.derive(async (it) => {
+      const keys = await resolveAll(it.value(), selector)
+      return it
+        .map((el, i) => [el, keys[i]] as const)
+        .sortBy(([, key]) => key as number)
+        .map(([el]) => el)
+    })
   }
 
   async sumOf(selector: (el: T) => Promise<number> | number): Promise<number> {
@@ -895,15 +978,22 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   takeLastWhile(
     predicate: (el: T) => Promise<boolean> | boolean,
   ): AsyncChain<T> {
-    return new TakeLastWhileAsyncChain(this, predicate)
+    return this.derive(async (it) =>
+      it.takeLast(await countWhile(it.value(), predicate, true)),
+    )
   }
 
   takeWhile(predicate: (el: T) => Promise<boolean> | boolean): AsyncChain<T> {
-    return new TakeWhileAsyncChain(this, predicate)
+    return this.derive(async (it) =>
+      it.take(await countWhile(it.value(), predicate)),
+    )
   }
 
   union(...arrays: Array<Iterable<T> | AsyncChain<T>>): AsyncChain<T> {
-    return new UnionAsyncChain(this, arrays)
+    return new AsyncChain(async () => {
+      const others = await Promise.all(arrays.map(toArray))
+      return (await this.await()).union(...others)
+    })
   }
 
   async unzip(): Promise<PairSplit<T>> {
@@ -911,163 +1001,11 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   }
 
   withoutAll(values: Iterable<T> | AsyncChain<T>): AsyncChain<T> {
-    return new WithoutAllAsyncChain(this, values)
+    return this.derive(async (it) => it.withoutAll(await toArray(values)))
   }
 
   zip<U>(withArray: Iterable<U> | AsyncChain<U>): AsyncChain<[T, U]> {
-    return new ZippingAsyncChain(this, withArray)
-  }
-}
-
-class DerivedAsyncChain<T, U> extends AsyncChain<U> {
-  constructor(
-    private val: AsyncChain<T>,
-    private derive: (val: Chain<T>) => Chain<U>,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<U>> {
-    return this.derive(await this.val.await())
-  }
-}
-
-class SimpleAsyncChain<T> extends AsyncChain<T> {
-  constructor(private val: ReadonlyArray<Promise<T> | T>) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    return new Chain(await Promise.all(this.val))
-  }
-}
-
-class ChunkingAsyncChain<T> extends AsyncChain<T[]> {
-  constructor(
-    private val: AsyncChain<T>,
-    private size: number,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T[]>> {
-    const chunks = chunk(await this.val.value(), this.size)
-    return new Chain(chunks)
-  }
-}
-
-class ConcatenatingAsyncChain<T> extends AsyncChain<T> {
-  constructor(
-    private val: AsyncChain<T>,
-    private other: AsyncChain<T> | Iterable<T>,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    return (await this.val.await()).concat(await toArray(this.other))
-  }
-}
-
-class DistinctAsyncChain<T, D> extends AsyncChain<T> {
-  constructor(
-    private val: AsyncChain<T>,
-    private selector: (el: T) => D | Promise<D>,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    const keyed = await this.val.map(
-      async (el) => [el, await this.selector(el)] as const,
-    )
-    return keyed.distinctBy(([, key]) => key).map(([el]) => el)
-  }
-}
-
-class DropWhileAsyncChain<T> extends AsyncChain<T> {
-  constructor(
-    private val: AsyncChain<T>,
-    private predicate: (
-      el: T,
-      index: number,
-      array: ReadonlyArray<T>,
-    ) => Promise<boolean> | boolean,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    const values = await this.val.await()
-    let count = 0
-    for (let i = 0; i < values.value().length; i++) {
-      if (!(await this.predicate(values.value()[i], i, values.value()))) {
-        break
-      }
-      count++
-    }
-
-    return values.drop(count)
-  }
-}
-
-class DropLastWhileAsyncChain<T> extends AsyncChain<T> {
-  constructor(
-    private val: AsyncChain<T>,
-    private predicate: (
-      el: T,
-      index: number,
-      array: ReadonlyArray<T>,
-    ) => Promise<boolean> | boolean,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    const values = await this.val.await()
-    let count = 0
-    for (let i = values.value().length - 1; i >= 0; i--) {
-      if (!(await this.predicate(values.value()[i], i, values.value()))) {
-        break
-      }
-      count++
-    }
-
-    return values.dropLast(count)
-  }
-}
-
-class EntriesAsyncChain<
-  K extends string | number | symbol,
-  T,
-  Rec extends Partial<Record<K, T>> = Record<K, T>,
-> extends AsyncChain<[K, T]> {
-  constructor(private val: AsyncObjectChain<K, T, Rec>) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<[K, T]>> {
-    return (await this.val.await()).entries()
-  }
-}
-
-class FilterAsyncChain<T> extends AsyncChain<T> {
-  constructor(
-    private val: AsyncChain<T>,
-    private predicate: (
-      el: T,
-      index: number,
-      array: ReadonlyArray<T>,
-    ) => Promise<boolean> | boolean,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    const current = await this.val.await()
-    const mask = await asyncChain(current).map(this.predicate).value()
-
-    return current.filter((_, index) => mask[index])
+    return this.derive(async (it) => it.zip(await toArray(withArray)))
   }
 }
 
@@ -1081,504 +1019,90 @@ type FlattenAsyncType<T> =
     ? U
     : T
 
-class FlattenAsyncChain<T> extends AsyncChain<FlattenAsyncType<T>> {
-  constructor(private val: AsyncChain<T>) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<FlattenAsyncType<T>>> {
-    const flattened = (await this.val.await()).map((el) =>
-      el instanceof Set ? [...(el as Set<unknown>)] : el,
-    )
-
-    return flattened.flatten() as Chain<FlattenAsyncType<T>>
-  }
-}
-
-class IntersectionAsyncChain<T> extends AsyncChain<T> {
-  constructor(
-    private val: AsyncChain<T>,
-    private withArrays: ReadonlyArray<Iterable<T> | AsyncChain<T>>,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    const others = await Promise.all(this.withArrays.map(toArray))
-    const ret = intersect(await this.val.value(), ...others)
-    return chain(ret)
-  }
-}
-
-class KeysAsyncChain<K extends string | number | symbol> extends AsyncChain<K> {
-  constructor(private val: AsyncObjectChain<K, any>) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<K>> {
-    return (await this.val.await()).keys()
-  }
-}
-
-class MappingAsyncChain<T, U> extends AsyncChain<U> {
-  constructor(
-    private val: AsyncChain<T>,
-    private transformer: (
-      el: T,
-      index: number,
-      array: ReadonlyArray<T>,
-    ) => U | Promise<U>,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<U>> {
-    const entries = (await this.val.await()).map(
-      async (el, index, array) =>
-        await this.transformer(await el, index, array),
-    )
-
-    return await asyncChain(entries).await()
-  }
-}
-
-class PermutationsAsyncChain<T> extends AsyncChain<ReadonlyArray<T>> {
-  constructor(private val: AsyncChain<T>) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<ReadonlyArray<T>>> {
-    return (await this.val.await()).permutations()
-  }
-}
-
-class ReversingAsyncChain<T> extends AsyncChain<T> {
-  constructor(private val: AsyncChain<T>) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    return (await this.val.await()).reverse()
-  }
-}
-
-class RunningReduceAsyncChain<T, O> extends AsyncChain<O> {
-  constructor(
-    private val: AsyncChain<T>,
-    private reducer: (accumulator: O, current: T) => Promise<O> | O,
-    private initialValue: O,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<O>> {
-    const values = await this.val.value()
-    const ret: Array<O> = []
-    let acc = this.initialValue
-    for (const it of values) {
-      acc = await this.reducer(acc, it)
-      ret.push(acc)
-    }
-
-    return chain(ret)
-  }
-}
-
-class SliceAsyncChain<T> extends AsyncChain<T> {
-  constructor(
-    private val: AsyncChain<T>,
-    private start?: number,
-    private end?: number,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    return (await this.val.await()).slice(this.start, this.end)
-  }
-}
-
-class SlidingWindowAsyncChain<T> extends AsyncChain<ReadonlyArray<T>> {
-  constructor(
-    private val: AsyncChain<T>,
-    private size: number,
-    private options: {
-      step?: number
-      partial?: boolean
-    },
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<ReadonlyArray<T>>> {
-    const ret = slidingWindows(await this.val.value(), this.size, this.options)
-    return new Chain(ret)
-  }
-}
-
-class SortByAsyncChain<T> extends AsyncChain<T> {
-  constructor(
-    private val: AsyncChain<T>,
-    private selector: (
-      a: T,
-    ) =>
-      | Promise<Date | bigint | string | number>
-      | Date
-      | bigint
-      | string
-      | number,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    const values = await this.val
-      .map(async (el) => [el, await this.selector(el)] as const)
-      .await()
-    return values.sortBy((it) => it[1]).map((it) => it[0])
-  }
-}
-
-class SortingAsyncChain<T> extends AsyncChain<T> {
-  constructor(
-    private val: AsyncChain<T>,
-    private compareFn?: (a: T, b: T) => number,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    return (await this.val.await()).sort(this.compareFn)
-  }
-}
-
-class TakeWhileAsyncChain<T> extends AsyncChain<T> {
-  constructor(
-    private val: AsyncChain<T>,
-    private predicate: (
-      el: T,
-      index: number,
-      array: ReadonlyArray<T>,
-    ) => Promise<boolean> | boolean,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    const values = await this.val.value()
-    const ret: Array<T> = []
-    for (let i = 0; i < values.length; i++) {
-      if (await this.predicate(values[i], i, values)) {
-        ret.push(values[i])
-      } else {
-        break
-      }
-    }
-
-    return new Chain(ret)
-  }
-}
-
-class TakeLastWhileAsyncChain<T> extends AsyncChain<T> {
-  constructor(
-    private val: AsyncChain<T>,
-    private predicate: (
-      el: T,
-      index: number,
-      array: ReadonlyArray<T>,
-    ) => Promise<boolean> | boolean,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    const values = await this.val.value()
-    const ret: Array<T> = []
-    for (let i = values.length - 1; i >= 0; i--) {
-      if (await this.predicate(values[i], i, values)) {
-        ret.push(values[i])
-      } else {
-        break
-      }
-    }
-
-    return new Chain(ret.reverse())
-  }
-}
-
-class UnionAsyncChain<T> extends AsyncChain<T> {
-  constructor(
-    private val: AsyncChain<T>,
-    private withArrays: ReadonlyArray<Iterable<T> | AsyncChain<T>>,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    const other = await Promise.all(this.withArrays.map(toArray))
-
-    return (await this.val.await()).union(...other)
-  }
-}
-
-class ValuesAsyncChain<
-  K extends string | number | symbol,
-  T,
-  Rec extends Partial<Record<K, T>> = Record<K, T>,
-> extends AsyncChain<T> {
-  constructor(private val: AsyncObjectChain<K, T, Rec>) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    return (await this.val.await()).values()
-  }
-}
-
-class ZippingAsyncChain<T, U> extends AsyncChain<[T, U]> {
-  constructor(
-    private val: AsyncChain<T>,
-    private withArray: Iterable<U> | AsyncChain<U>,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<[T, U]>> {
-    return (await this.val.await()).zip(await toArray(this.withArray))
-  }
-}
-
-class WithoutAllAsyncChain<T> extends AsyncChain<T> {
-  constructor(
-    private val: AsyncChain<T>,
-    private without: Iterable<T> | AsyncChain<T>,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<Chain<T>> {
-    return (await this.val.await()).withoutAll(await toArray(this.without))
-  }
-}
-
 // *********************
 //  Async Object
 // *********************
-export abstract class AsyncObjectChain<
+export class AsyncObjectChain<
   K extends string | number | symbol,
   T,
   Rec extends Partial<Record<K, T>> = Record<K, T>,
-> implements Promise<ObjectChain<K, T, Rec>>
-{
-  private _value: Promise<ObjectChain<K, T, Rec>> | null
+> extends Lazy<ObjectChain<K, T, Rec>> {
+  readonly [Symbol.toStringTag] = "AsyncObjectChain"
 
-  protected startCalculation() {
-    this._value = this._value ?? this.calculate()
-  }
-
-  [Symbol.toStringTag] = "AsyncObjectChain"
-
-  constructor() {
-    this._value = null
-  }
-
-  abstract calculate(): Promise<ObjectChain<K, T, Rec>>
-
-  async await(): Promise<ObjectChain<K, T, Rec>> {
-    void this.startCalculation()
-    return (await this._value) ?? error("No promise after starting calculation")
+  /** Prefer `asyncObjChain(...)`. */
+  constructor(source: () => Promise<ObjectChain<K, T, Rec>>) {
+    super(source)
   }
 
   async value(): Promise<Rec> {
     return (await this.await()).value()
   }
 
-  async then<TResult1 = ObjectChain<K, T, Rec>, TResult2 = never>(
-    onfulfilled?:
-      | ((value: ObjectChain<K, T, Rec>) => TResult1 | PromiseLike<TResult1>)
-      | null
-      | undefined,
-    onrejected?:
-      | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-      | null
-      | undefined,
-  ): Promise<TResult1 | TResult2> {
-    return await this.await().then(onfulfilled, onrejected)
+  private mapEntriesTo<U extends string | number | symbol, V>(
+    transformer: (key: K, value: T) => [U, V] | Promise<[U, V]>,
+  ): AsyncObjectChain<U, V> {
+    return new AsyncObjectChain(async () =>
+      objChain(
+        await this.entries().map(async ([k, v]) => await transformer(k, v)),
+      ),
+    )
   }
 
-  async catch<TResult = never>(
-    onrejected?:
-      | ((reason: any) => TResult | PromiseLike<TResult>)
-      | null
-      | undefined,
-  ): Promise<ObjectChain<K, T, Rec> | TResult> {
-    return this.then((it) => it, onrejected)
-  }
-
-  finally(
-    onfinally?: (() => void) | null | undefined,
-  ): Promise<ObjectChain<K, T, Rec>> {
-    return this.await().finally(onfinally)
+  private filterEntriesBy(
+    condition: (key: K, value: T) => boolean | Promise<boolean>,
+  ): AsyncObjectChain<K, T> {
+    return new AsyncObjectChain(async () =>
+      objChain(
+        await this.entries().filter(async ([k, v]) => await condition(k, v)),
+      ),
+    )
   }
 
   keys(): AsyncChain<K> {
-    return new KeysAsyncChain(this)
+    return new AsyncChain(async () => (await this.await()).keys())
   }
 
   values(): AsyncChain<T> {
-    return new ValuesAsyncChain(this)
+    return new AsyncChain(async () => (await this.await()).values())
   }
 
   entries(): AsyncChain<[K, T]> {
-    return new EntriesAsyncChain(this)
+    return new AsyncChain(async () => (await this.await()).entries())
   }
 
   mapKeys<U extends string | number | symbol>(
     transformer: (key: K) => Promise<U> | U,
   ): AsyncObjectChain<U, T> {
-    return new MappingEntriesAsyncObjectChain<K, T, U, T, Rec>(
-      this,
-      async (k, v) => [await transformer(k), v],
-    )
+    return this.mapEntriesTo(async (k, v) => [await transformer(k), v])
   }
 
   mapValues<V>(
     transformer: (value: T) => Promise<V> | V,
   ): AsyncObjectChain<K, V> {
-    return new MappingEntriesAsyncObjectChain<K, T, K, V, Rec>(
-      this,
-      async (k, v) => [k, await transformer(v)],
-    )
+    return this.mapEntriesTo(async (k, v) => [k, await transformer(v)])
   }
 
   mapEntries<U extends string | number | symbol, V>(
     transformer: (key: K, value: T) => Promise<[U, V]> | [U, V],
   ): AsyncObjectChain<U, V> {
-    return new MappingEntriesAsyncObjectChain<K, T, U, V, Rec>(
-      this,
-      transformer,
-    )
+    return this.mapEntriesTo(transformer)
   }
 
   filterKeys(
     filter: (key: K) => Promise<boolean> | boolean,
   ): AsyncObjectChain<K, T> {
-    return new FilteringAsyncObjectChain(this, (k, _) => filter(k))
+    return this.filterEntriesBy((k) => filter(k))
   }
 
   filterValues(
     filter: (value: T) => Promise<boolean> | boolean,
   ): AsyncObjectChain<K, T> {
-    return new FilteringAsyncObjectChain(this, (_, v) => filter(v))
+    return this.filterEntriesBy((_, v) => filter(v))
   }
 
   filterEntries(
     filter: (key: K, value: T) => Promise<boolean> | boolean,
   ): AsyncObjectChain<K, T> {
-    return new FilteringAsyncObjectChain(this, filter)
-  }
-}
-
-class MappingEntriesAsyncObjectChain<
-  K extends string | number | symbol,
-  T,
-  U extends string | number | symbol,
-  V,
-  Rec extends Partial<Record<K, T>> = Record<K, T>,
-> extends AsyncObjectChain<U, V> {
-  constructor(
-    private val: AsyncObjectChain<K, T, Rec>,
-    private transformer: (key: K, value: T) => [U, V] | Promise<[U, V]>,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<ObjectChain<U, V>> {
-    const values = await this.val
-      .entries()
-      .map(async ([k, v]) => await this.transformer(k, v))
-
-    return objChain(values)
-  }
-}
-
-class AssociatingAsyncObjectChain<
-  K extends string | number | symbol,
-  T,
-> extends AsyncObjectChain<K, T> {
-  constructor(
-    private val: AsyncChain<T>,
-    private selector: (elem: T) => K | Promise<K>,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<ObjectChain<K, T>> {
-    const entries = await this.val.map(
-      async (it) => [await this.selector(it), it] as const,
-    )
-
-    return objChain(entries)
-  }
-}
-
-class GroupingAsyncObjectChain<
-  K extends string | number | symbol,
-  T,
-> extends AsyncObjectChain<K, ReadonlyArray<T>> {
-  constructor(
-    private val: AsyncChain<T>,
-    private selector: (elem: T) => K | Promise<K>,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<ObjectChain<K, ReadonlyArray<T>>> {
-    const keyed = await this.val
-      .map(async (el) => [await this.selector(el), el] as const)
-      .value()
-    return groupEntries(keyed)
-  }
-}
-
-class FilteringAsyncObjectChain<
-  K extends string | number | symbol,
-  T,
-  Rec extends Partial<Record<K, T>> = Record<K, T>,
-> extends AsyncObjectChain<K, T> {
-  constructor(
-    private val: AsyncObjectChain<K, T, Rec>,
-    private condition: (key: K, value: T) => boolean | Promise<boolean>,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<ObjectChain<K, T>> {
-    const entries = await this.val
-      .entries()
-      .filter(async ([k, v]) => await this.condition(k, v))
-
-    return objChain(entries)
-  }
-}
-
-class SimpleAsyncObjectChain<
-  K extends string | number | symbol,
-  T,
-  Rec extends Partial<Record<K, T>> = Record<K, T>,
-> extends AsyncObjectChain<K, T, Rec> {
-  constructor(
-    private val:
-      | Rec
-      | ObjectChain<K, T, Rec>
-      | Promise<Rec | ObjectChain<K, T, Rec>>,
-  ) {
-    super()
-  }
-
-  async calculate(): Promise<ObjectChain<K, T, Rec>> {
-    const val = await this.val
-    if (val instanceof ObjectChain) return val as ObjectChain<K, T, Rec>
-    return objChain(val) as unknown as ObjectChain<K, T, Rec>
+    return this.filterEntriesBy(filter)
   }
 }
