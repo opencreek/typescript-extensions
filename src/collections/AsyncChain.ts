@@ -1542,6 +1542,7 @@ export class GroupingAsyncObjectChain<
     const entries = await this.val
       .map(async (it) => [await this.selector(it), it] as const)
       .value()
+
     const record = {} as Record<K, Array<T>>
     for (const [key, el] of entries) {
       if (record[key] != null) {

@@ -97,7 +97,7 @@ test("async obj chain should correctly handle exceptions", async (t) => {
   const c = asyncChain([1, 2, 3, 4]).associateBy((it) => it)
 
   await t.throwsAsync(async () => {
-    await c.mapKeys(withDelay((it) => (it == 3 ? error("3!") : it), 100))
+    await c.mapKeys(withDelay((it) => (it == 3 ? error("3!") : it)))
   })
 })
 
@@ -113,6 +113,28 @@ test("dropLastWhile should work correctly", async (t) => {
   const result = await c.dropLastWhile(withDelay((it) => it >= 3)).value()
 
   t.deepEqual(result, [3, 1, 2])
+})
+
+test("reduce should work correctly", async (t) => {
+  const c = asyncChain([1, 2, 3, 4, 5])
+
+  const result = await c.reduce<number>(async (acc, cur) => {
+    await sleep(0)
+    return acc + cur
+  })
+
+  t.is(result, 15)
+})
+
+test("reduceRight should work correctly", async (t) => {
+  const c = asyncChain([1, 2, 3, 4, 5])
+
+  const result = await c.reduceRight<string>(async (acc, cur) => {
+    await sleep(0)
+    return acc + cur.toString()
+  })
+
+  t.is(result, "54321")
 })
 
 test("All the functions once, so they don't form infinite loops", async (t) => {
@@ -165,6 +187,7 @@ test("All the functions once, so they don't form infinite loops", async (t) => {
     await sleep(0)
     t.true(it < 10)
   })
+
   t.true(await c.every(withDelay((it) => it > 0)))
   t.true(await c.some(withDelay((it) => it > 3)))
 
@@ -187,12 +210,35 @@ test("All the functions once, so they don't form infinite loops", async (t) => {
   t.snapshot(await c.mapJoin(",", (it) => it + "^"), "mapJoin")
 })
 
+test("firstNotNullishOf", async (t) => {
+  const c = asyncChain([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+  const result = await c.firstNotNullishOf(
+    withDelay((it) => (it < 5 ? null : it + 3)),
+  )
+
+  t.is(result, 8)
+})
+
+test("findIndex", async (t) => {
+  const c = asyncChain([1, 2, 3, 4, 5, 6, 4, 8, 9])
+  const result = await c.findIndex(withDelay((it) => it == 4))
+
+  t.is(result, 3)
+})
+
+test("findLastIndex", async (t) => {
+  const c = asyncChain([1, 2, 3, 4, 5, 6, 4, 8, 9])
+  const result = await c.findLastIndex(withDelay((it) => it == 4))
+
+  t.is(result, 6)
+})
+
 function withDelay<T, U>(
   transform: (el: T) => Promise<U> | U,
-  time = 0,
 ): (el: T) => Promise<U> {
   return async (el: T) => {
-    await sleep(time)
+    await sleep(Math.random() * 15)
     return await transform(el)
   }
 }
