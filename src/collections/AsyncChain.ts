@@ -1028,11 +1028,12 @@ export class FilterAsyncChain<T> extends AsyncChain<T> {
 
 type Distribute<U> = U extends any ? { type: U } : never
 
-type FlattenAsyncType<T> = Distribute<T> extends {
-  type: ArrayOrAsyncChain<infer U>
-}
-  ? U
-  : T
+type FlattenAsyncType<T> =
+  Distribute<T> extends {
+    type: ArrayOrAsyncChain<infer U>
+  }
+    ? U
+    : T
 
 export class FlattenAsyncChain<T> extends AsyncChain<FlattenAsyncType<T>> {
   constructor(
@@ -1051,8 +1052,8 @@ export class FlattenAsyncChain<T> extends AsyncChain<FlattenAsyncType<T>> {
       el instanceof AsyncChain
         ? await el.value()
         : el instanceof Chain
-        ? el.value()
-        : el,
+          ? el.value()
+          : el,
     )
 
     return flattened.flatten() as Chain<FlattenAsyncType<T>>
@@ -1354,8 +1355,8 @@ export class WithoutAllAsyncChain<T> extends AsyncChain<T> {
       this.without instanceof AsyncChain
         ? await this.without.value()
         : this.without instanceof Chain
-        ? this.without.value()
-        : this.without
+          ? this.without.value()
+          : this.without
     return (await this.val.await()).withoutAll(other)
   }
 }

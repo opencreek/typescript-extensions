@@ -201,14 +201,14 @@ type Touched<Entity> =
           [X in number]?: Touched<Entity[number]>
         }
       : Entity extends Array<unknown>
-      ? {
-          [X in number]?: Touched<Entity[number]>
-        }
-      : Entity extends Record<string, unknown>
-      ? {
-          [K in keyof Entity]?: Touched<Entity[K]>
-        }
-      : never)
+        ? {
+            [X in number]?: Touched<Entity[number]>
+          }
+        : Entity extends Record<string, unknown>
+          ? {
+              [K in keyof Entity]?: Touched<Entity[K]>
+            }
+          : never)
 
 function testTouchedType<
   Entity extends Array<unknown> | ReadonlyArray<unknown>,
