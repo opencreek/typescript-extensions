@@ -38,9 +38,8 @@ type ArrayOrChain<U> = Chain<U> | ReadonlyArray<U>
 // used to mappe type union below
 // otherwise mixed types in chains, would not be carried over correctly
 type Distribute<U> = U extends any ? { type: U } : never
-type FlattenChain<T> = Distribute<T> extends { type: ArrayOrChain<infer U> }
-  ? Chain<U>
-  : Chain<T>
+type FlattenChain<T> =
+  Distribute<T> extends { type: ArrayOrChain<infer U> } ? Chain<U> : Chain<T>
 
 export function objChain<K extends string | number | symbol, T>(
   value: Record<K, T> | ObjectChain<K, T> | Chain<readonly [K, T]>,
