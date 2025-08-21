@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/no-unsafe-function-type */
 export function extendProtoype(
   target: Function,
   func: Function,
@@ -30,12 +30,8 @@ type ThisFunction<F extends (...args: any) => any> = (
   ...args: SkipFirstParameter<F>
 ) => ReturnType<F>
 
-type FirstParameter<F extends (...args: any) => any> = Parameters<F> extends [
-  infer T,
-  ...infer _,
-]
-  ? T
-  : never
+type FirstParameter<F extends (...args: any) => any> =
+  Parameters<F> extends [infer T, ...infer _] ? T : never
 
 type SkipFirst<T extends unknown[]> = T extends [infer _, ...infer R]
   ? [...R]

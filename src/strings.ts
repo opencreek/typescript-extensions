@@ -7,8 +7,8 @@ export function format(
       arg === undefined
         ? "<undefined>"
         : arg === null
-        ? "<null>"
-        : arg.toString()
+          ? "<null>"
+          : arg.toString()
     pattern = pattern.replace("{}", str)
   }
 
