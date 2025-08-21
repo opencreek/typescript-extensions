@@ -31,7 +31,7 @@ jobs:
         id: cache-modules
         with:
           path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/pnpm-lock.json') }}
       - uses: pnpm/action-setup@v4
         with:
           version: 10
