@@ -102,7 +102,7 @@ export class BigDecimal {
     try {
       this.#value = BigInt(`${integer}${decimal ?? ""}`)
     } catch (e) {
-      if (e instanceof Error && e.message.includes("Cannot convert")) {
+      if (e instanceof SyntaxError) {
         error("BigDecimal: not a number")
       }
 
