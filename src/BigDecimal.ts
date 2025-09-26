@@ -95,7 +95,7 @@ export class BigDecimal {
     // split into integer and decimal parts
     const [integer, decimal, ...rest] = str.split(".")
     if (rest.length > 0) {
-      error("BigDecimal: too many decimal places")
+      error("BigDecimal: multiple decimal points found")
     }
 
     // The unscaled value is the integer part followed by the decimal part
