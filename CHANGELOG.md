@@ -1,3 +1,15 @@
+# v2.8.0 (Sat Sep 27 2025)
+
+#### 🚀 Enhancement
+
+- Make new BigDecimal produce better errors [#41](https://github.com/opencreek/typescript-extensions/pull/41) ([@mhlz](https://github.com/mhlz))
+
+#### Authors: 1
+
+- Mischa Holz ([@mhlz](https://github.com/mhlz))
+
+---
+
 # v2.7.4 (Tue Apr 16 2024)
 
 #### 🐛 Bug Fix
