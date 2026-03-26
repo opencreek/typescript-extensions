@@ -445,6 +445,16 @@ test("associateWith should create an object from string elements", async (t) => 
   t.deepEqual(result, { a: "A", b: "B", c: "C" })
 })
 
+test("associateWith should support async selector", async (t) => {
+  const c = asyncChain(["a", "b", "c"])
+
+  const result = await c
+    .associateWith(withDelay((key) => key.toUpperCase()))
+    .value()
+
+  t.deepEqual(result, { a: "A", b: "B", c: "C" })
+})
+
 // ─── AsyncObjectChain methods ────────────────────────────────────────────────
 
 test("AsyncObjectChain keys should return all keys", async (t) => {

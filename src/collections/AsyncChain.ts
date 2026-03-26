@@ -88,11 +88,11 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   }
 
   associateWith<U>(
-    selector: (key: string) => U,
+    selector: (key: string) => U | Promise<U>,
   ): IfString<T, AsyncObjectChain<string, U>> {
-    return (this as unknown as AsyncChain<string>)
-      .associateBy((el) => el)
-      .mapValues(selector) as IfString<T, AsyncObjectChain<string, U>>
+    return this
+      .associateBy((el) => el as unknown as string)
+      .mapValues(selector as (value: T) => U | Promise<U>) as IfString<T, AsyncObjectChain<string, U>>
   }
 
   chunk(size: number): AsyncChain<T[]> {
