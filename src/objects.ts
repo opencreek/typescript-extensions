@@ -42,10 +42,5 @@ declare global {
       this: NonNullable<T>,
       predicate: (thiz: NonNullable<T>) => boolean,
     ): T | undefined
-
-    mapValues<T, Key extends keyof T, O>(
-      this: Readonly<Record<Key, T>>,
-      transformer: (value: T) => O,
-    ): Record<Key, O>
   }
 }

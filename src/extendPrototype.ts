@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-function-type */
+/* eslint-disable  @typescript-eslint/no-unsafe-function-type */
 export function extendProtoype(
   target: Function,
   func: Function,

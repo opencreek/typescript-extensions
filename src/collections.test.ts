@@ -1,5 +1,5 @@
 import test from "ava"
-import { chain } from "./collections"
+import { chain, objChain } from "./collections"
 
 test("should associateBy correctly", (t) => {
   const result = chain([1, 2, 3])
@@ -162,3 +162,61 @@ test("should allow flatMap over sets", (t) => {
 
   t.deepEqual(result, [1, 2, 3, 1])
 })
+
+test("chain::mapAsync should be downwards compatible", async (t) => {
+  const c = chain([1, 2, 3, 4, 5])
+
+  const b = await c.mapAsync(async (it) => it * 3)
+
+  const result = b.value()
+
+  t.deepEqual(result, [3, 6, 9, 12, 15])
+})
+
+test("chain::mapAsync should be chainable into an async chain", async (t) => {
+  const c = chain([1, 2, 3, 4, 5])
+
+  const b = await c
+    .mapAsync(async (it) => it * 3)
+    .filter(async (it) => it % 2 === 1)
+    .sortBy(async (it) => -it)
+
+  const result = b.value()
+
+  t.deepEqual(result, [15, 9, 3])
+})
+
+test("The Touched Type should work correctly with object chain", (t) => {
+  // we do the iife here, so TS doesn't narrow the type further
+  const result = testTouchedType([{ id: true }] as unknown as Touched<unknown>)
+
+  t.deepEqual(result, { "0-mapped": { id: true } })
+})
+
+type Touched<Entity> =
+  | undefined
+  | true
+  | (Entity extends ReadonlyArray<unknown>
+      ? {
+          [X in number]?: Touched<Entity[number]>
+        }
+      : Entity extends Array<unknown>
+        ? {
+            [X in number]?: Touched<Entity[number]>
+          }
+        : Entity extends Record<string, unknown>
+          ? {
+              [K in keyof Entity]?: Touched<Entity[K]>
+            }
+          : never)
+
+function testTouchedType<
+  Entity extends Array<unknown> | ReadonlyArray<unknown>,
+>(touched: Touched<Entity>) {
+  if (touched !== true) {
+    return objChain(touched)
+      ?.mapKeys((it) => it.toString() + "-mapped")
+      .value()
+  }
+  return false
+}
