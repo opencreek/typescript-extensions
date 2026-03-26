@@ -89,14 +89,10 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
 
   associateWith<U>(
     selector: (key: string) => U,
-  ): IfString<T, ObjectChain<string, U>> {
-    const entries = this.map((el) => {
-      return [
-        el as unknown as string,
-        selector(el as unknown as string),
-      ] as const
-    })
-    return objChain(entries) as IfString<T, ObjectChain<string, U>>
+  ): IfString<T, AsyncObjectChain<string, U>> {
+    return (this as unknown as AsyncChain<string>)
+      .associateBy((el) => el)
+      .mapValues(selector) as IfString<T, AsyncObjectChain<string, U>>
   }
 
   chunk(size: number): AsyncChain<T[]> {
@@ -128,6 +124,7 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   }
 
   takeLast(num: number): AsyncChain<T> {
+    if (num === 0) return new SliceAsyncChain(this, 0, 0)
     return new SliceAsyncChain(this, -num)
   }
 
@@ -394,7 +391,7 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
     transformer: (el: T) => string | Promise<string>,
   ): Promise<string> {
     return this.reduce(async (acc, it, idx) => {
-      const mapped = transformer(it)
+      const mapped = await transformer(it)
       return acc + (idx > 0 ? separator : "") + mapped
     }, "")
   }
@@ -1373,7 +1370,7 @@ export abstract class AsyncObjectChain<
   private _value: Promise<ObjectChain<K, T, Rec>> | null
 
   protected startCalculation() {
-    this._value = this.calculate()
+    this._value = this._value ?? this.calculate()
   }
 
   [Symbol.toStringTag] = "AsyncObjectChain"

@@ -268,6 +268,7 @@ export class Chain<T> implements Iterable<T> {
   }
 
   takeLast(num: number): Chain<T> {
+    if (num === 0) return new Chain([])
     return new Chain(this.val.slice(-num))
   }
 
