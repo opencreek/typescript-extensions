@@ -24,6 +24,16 @@ export function asyncChain<T>(
   return new SimpleAsyncChain(val)
 }
 
+export function asyncObjChain<
+  K extends string | number | symbol,
+  T,
+  Rec extends Partial<Record<K, T>> = Record<K, T>,
+>(
+  val: Rec | ObjectChain<K, T, Rec> | Promise<Rec | ObjectChain<K, T, Rec>>,
+): AsyncObjectChain<K, T, Rec> {
+  return new SimpleAsyncObjectChain(val)
+}
+
 export abstract class AsyncChain<T> implements Promise<Chain<T>> {
   private _value: Promise<Chain<T>> | null
 
@@ -881,7 +891,6 @@ export abstract class AsyncChain<T> implements Promise<Chain<T>> {
 export class SimpleAsyncChain<T> extends AsyncChain<T> {
   constructor(private val: ReadonlyArray<Promise<T> | T>) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -895,7 +904,6 @@ export class ChunkingAsyncChain<T> extends AsyncChain<T[]> {
     private size: number,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T[]>> {
@@ -910,7 +918,6 @@ export class ConcatenatingAsyncChain<T> extends AsyncChain<T> {
     private other: AsyncChain<T> | Iterable<T>,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -926,7 +933,6 @@ export class DistinctAsyncChain<T, D> extends AsyncChain<T> {
     private selector: (el: T) => D,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -944,7 +950,6 @@ export class DropWhileAsyncChain<T> extends AsyncChain<T> {
     ) => Promise<boolean> | boolean,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -971,7 +976,6 @@ export class DropLastWhileAsyncChain<T> extends AsyncChain<T> {
     ) => Promise<boolean> | boolean,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1012,7 +1016,6 @@ export class FilterAsyncChain<T> extends AsyncChain<T> {
     ) => Promise<boolean> | boolean,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1041,7 +1044,6 @@ export class FlattenAsyncChain<T> extends AsyncChain<FlattenAsyncType<T>> {
       | AsyncChain<AsyncChain<T>>,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<FlattenAsyncType<T>>> {
@@ -1063,7 +1065,6 @@ export class IntersectionAsyncChain<T> extends AsyncChain<T> {
     private withArrays: ReadonlyArray<readonly T[] | AsyncChain<T>>,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1099,7 +1100,6 @@ export class MappingAsyncChain<T, U> extends AsyncChain<U> {
     ) => U | Promise<U>,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<U>> {
@@ -1115,7 +1115,6 @@ export class MappingAsyncChain<T, U> extends AsyncChain<U> {
 export class PermutationsAsyncChain<T> extends AsyncChain<ReadonlyArray<T>> {
   constructor(private val: AsyncChain<T>) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<ReadonlyArray<T>>> {
@@ -1126,7 +1125,6 @@ export class PermutationsAsyncChain<T> extends AsyncChain<ReadonlyArray<T>> {
 export class ReversingAsyncChain<T> extends AsyncChain<T> {
   constructor(private val: AsyncChain<T>) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1141,7 +1139,6 @@ export class RunningReduceAsyncChain<T, O> extends AsyncChain<O> {
     private initialValue: O,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<O>> {
@@ -1165,7 +1162,6 @@ export class SliceAsyncChain<T> extends AsyncChain<T> {
     private end?: number,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1183,7 +1179,6 @@ export class SlidingWindowAsyncChain<T> extends AsyncChain<ReadonlyArray<T>> {
     },
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<ReadonlyArray<T>>> {
@@ -1205,7 +1200,6 @@ export class SortByAsyncChain<T> extends AsyncChain<T> {
       | number,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1222,7 +1216,6 @@ export class SortingAsyncChain<T> extends AsyncChain<T> {
     private compareFn?: (a: T, b: T) => number,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1240,7 +1233,6 @@ export class TakeWhileAsyncChain<T> extends AsyncChain<T> {
     ) => Promise<boolean> | boolean,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1268,7 +1260,6 @@ export class TakeLastWhileAsyncChain<T> extends AsyncChain<T> {
     ) => Promise<boolean> | boolean,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1292,7 +1283,6 @@ export class UnionAsyncChain<T> extends AsyncChain<T> {
     private withArrays: ReadonlyArray<readonly T[] | AsyncChain<T>>,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1326,7 +1316,6 @@ export class ZippingAsyncChain<T, U> extends AsyncChain<[T, U]> {
     private withArray: readonly U[] | AsyncChain<U>,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<[T, U]>> {
@@ -1344,7 +1333,6 @@ export class WithoutAllAsyncChain<T> extends AsyncChain<T> {
     private without: readonly T[] | AsyncChain<T> | Chain<T>,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<Chain<T>> {
@@ -1400,7 +1388,7 @@ export abstract class AsyncObjectChain<
       | null
       | undefined,
   ): Promise<TResult1 | TResult2> {
-    return await this.calculate().then(onfulfilled, onrejected)
+    return await this.await().then(onfulfilled, onrejected)
   }
 
   async catch<TResult = never>(
@@ -1511,7 +1499,6 @@ export class AssociatingAsyncObjectChain<
     private selector: (elem: T) => K | Promise<K>,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<ObjectChain<K, T>> {
@@ -1532,7 +1519,6 @@ export class GroupingAsyncObjectChain<
     private selector: (elem: T) => K | Promise<K>,
   ) {
     super()
-    this.startCalculation()
   }
 
   async calculate(): Promise<ObjectChain<K, ReadonlyArray<T>>> {
@@ -1571,5 +1557,26 @@ export class FilteringAsyncObjectChain<
       .filter(async ([k, v]) => await this.condition(k, v))
 
     return objChain(entries)
+  }
+}
+
+export class SimpleAsyncObjectChain<
+  K extends string | number | symbol,
+  T,
+  Rec extends Partial<Record<K, T>> = Record<K, T>,
+> extends AsyncObjectChain<K, T, Rec> {
+  constructor(
+    private val:
+      | Rec
+      | ObjectChain<K, T, Rec>
+      | Promise<Rec | ObjectChain<K, T, Rec>>,
+  ) {
+    super()
+  }
+
+  async calculate(): Promise<ObjectChain<K, T, Rec>> {
+    const val = await this.val
+    if (val instanceof ObjectChain) return val as ObjectChain<K, T, Rec>
+    return objChain(val) as unknown as ObjectChain<K, T, Rec>
   }
 }

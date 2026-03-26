@@ -64,6 +64,58 @@ test("async chain should not evaluate multiple times", async (t) => {
   t.is(evaluations, 5, "should not evaluate multiple times")
 })
 
+test("async object chain should not evaluate multiple times when awaited", async (t) => {
+  let evaluations = 0
+  const c = asyncChain([1, 2, 3])
+  const objChain = c.associateBy(async (it) => {
+    evaluations++
+    return it.toString()
+  })
+
+  // First await
+  const result1 = await objChain
+  t.deepEqual(result1.value(), { "1": 1, "2": 2, "3": 3 })
+  // AssociatingAsyncObjectChain calls startCalculation in constructor,
+  // and then the first await calls calculate() again because .then() uses calculate() instead of await().
+  // Thus evaluations becomes 3 (from constructor) + 3 (from first await) = 6.
+  t.is(evaluations, 3, "should evaluate exactly once after first await")
+
+  // Second await
+  const result2 = await objChain
+  t.deepEqual(result2.value(), { "1": 1, "2": 2, "3": 3 })
+  t.is(
+    evaluations,
+    3,
+    "should not re-evaluate when awaited again (memoization check)",
+  )
+})
+
+test("async object chain (lazy) should not evaluate multiple times when awaited", async (t) => {
+  let evaluations = 0
+  const c = asyncChain([1, 2, 3])
+  const objChain = c
+    .associateBy((it) => it.toString())
+    .mapValues(async (v) => {
+      evaluations++
+      return v * 2
+    })
+  // MappingEntriesAsyncObjectChain is lazy (doesn't call startCalculation in constructor)
+
+  // First await
+  const result1 = await objChain
+  t.deepEqual(result1.value(), { "1": 2, "2": 4, "3": 6 })
+  t.is(evaluations, 3, "should evaluate exactly once after first await")
+
+  // Second await
+  const result2 = await objChain
+  t.deepEqual(result2.value(), { "1": 2, "2": 4, "3": 6 })
+  t.is(
+    evaluations,
+    3,
+    "should not re-evaluate when awaited again (memoization check)",
+  )
+})
+
 test("Async chain should associate to async object chain", async (t) => {
   const c = asyncChain([1, 2, 3, 4, 5, 6, 7, 8, 9])
 
