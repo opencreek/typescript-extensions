@@ -2,42 +2,49 @@ name: Pull Request
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    # labeled/unlabeled: re-check when the release label (major/minor/...) changes
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
 
 jobs:
   check-version-increase:
     name: Check version tag
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-node@main
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v3
         with:
-          version: 10
-      - run: pnpx auto pr-check --url https://github.com/$GITHUB_REPOSITORY
+          runtime: node@26
+          cache: true
+      - run: pnpm exec auto pr-check --url https://github.com/$GITHUB_REPOSITORY
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-canary:
     name: Publish a Canary version
     needs: check-version-increase
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
+    # forks get no OIDC token, so they can't publish anyway
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      pull-requests: write # auto writes the canary version into the PR body
+      id-token: write # npm trusted publishing (OIDC), no NPM_TOKEN needed
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-node@main
-      - uses: actions/cache@main
-        id: cache-modules
+      - uses: actions/checkout@v7
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/pnpm-lock.json') }}
-      - uses: pnpm/action-setup@v4
+          fetch-depth: 0 # auto needs tags and history
+      - uses: pnpm/setup@v3
         with:
-          version: 10
-      - run: pnpm install
+          runtime: node@26 # bundles npm >= 11.5.1, required for trusted publishing
+          cache: false # no shared cache in a job that can publish
       - run: pnpm run build
-      - run: pnpx auto shipit
+      - run: pnpm exec auto shipit
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -2,76 +2,64 @@ name: On Push
 
 on: [push]
 
+permissions:
+  contents: read
+
 jobs:
   audit:
     name: Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-node@main
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v3
         with:
-          version: 10
-      - run: pnpm audit
+          runtime: node@26
+          install: false
+      # only what ships to users; dev tooling is covered by Dependabot
+      - run: pnpm audit --prod
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-node@main
-      - uses: actions/cache@main
-        id: cache-modules
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v3
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/pnpm-lock.json') }}
-      - uses: actions/cache@main
-        if: steps.cache-modules.outputs.cache-hit != 'true'
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-global
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - run: pnpm install
+          runtime: node@26
+          cache: true
       - run: pnpm run lint
+
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-node@main
-      - uses: actions/cache@main
-        id: cache-modules
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v3
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - run: pnpm install
+          runtime: node@26
+          cache: true
       - run: pnpm run test
       - run: pnpm run build
 
-  publish-gpr:
+  publish:
     name: Publish Version
     needs: [test, lint]
     runs-on: ubuntu-latest
-    if: "contains(github.ref, 'main') && !contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
+    if: "github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
+    permissions:
+      contents: write # changelog commit and tags
+      issues: write
+      pull-requests: write # release comments on PRs
+      id-token: write # npm trusted publishing (OIDC), no NPM_TOKEN needed
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-node@main
-      - run: git fetch --tags
-      - uses: actions/cache@main
-        id: cache-modules
+      - uses: actions/checkout@v7
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/pnpm-lock.json') }}
-      - uses: pnpm/action-setup@v4
+          fetch-depth: 0 # auto needs tags and history
+      - uses: pnpm/setup@v3
         with:
-          version: 10
-      - run: pnpm install
+          runtime: node@26 # bundles npm >= 11.5.1, required for trusted publishing
+          cache: false # no shared cache in a job that can publish
       - run: pnpm run build
-      - run: pnpx auto shipit
+      - run: pnpm exec auto shipit
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
