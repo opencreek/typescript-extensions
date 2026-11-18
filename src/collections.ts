@@ -29,12 +29,16 @@ import {
   zip,
 } from "@opencreek/deno-std-collections"
 import { error } from "."
+import { AsyncChain, asyncChain } from "./collections/AsyncChain"
+import { groupEntries } from "./collections/groupEntries"
 
-type PairSplit<T> = T extends [infer F, infer L] ? [Chain<F>, Chain<L>] : never
+export type PairSplit<T> = T extends [infer F, infer L]
+  ? [Chain<F>, Chain<L>]
+  : never
 
-type IfString<T, U> = T extends string ? U : never
+export type IfString<T, U> = T extends string ? U : never
 
-type ArrayOrChain<U> = Chain<U> | ReadonlyArray<U>
+export type ArrayOrChain<U> = Chain<U> | ReadonlyArray<U>
 // used to mappe type union below
 // otherwise mixed types in chains, would not be carried over correctly
 type Distribute<U> = U extends any ? { type: U } : never
@@ -42,11 +46,12 @@ type FlattenChain<T> =
   Distribute<T> extends { type: ArrayOrChain<infer U> } ? Chain<U> : Chain<T>
 
 export function objChain<K extends string | number | symbol, T>(
-  value: Record<K, T> | ObjectChain<K, T> | Chain<readonly [K, T]>,
+  value:
+    | Record<K, T>
+    | Partial<Record<K, T>>
+    | ObjectChain<K, T>
+    | Chain<readonly [K, T]>,
 ): ObjectChain<K, T, Record<K, T>>
-export function objChain<K extends string | number | symbol, T>(
-  value: Partial<Record<K, T>>,
-): ObjectChain<K, T, Partial<Record<K, T>>>
 export function objChain<_K extends string | number | symbol, _T>(
   value: undefined | null,
 ): undefined
@@ -207,6 +212,10 @@ export class Chain<T> implements Iterable<T> {
     return this.val
   }
 
+  async() {
+    return asyncChain(this)
+  }
+
   associateBy<S extends string | number | symbol>(
     selector: (el: T) => S,
   ): ObjectChain<S, T> {
@@ -252,7 +261,8 @@ export class Chain<T> implements Iterable<T> {
   }
 
   dropLast(num: number): Chain<T> {
-    return new Chain(this.val.slice(0, -num))
+    // slice(0, -0) would be empty
+    return new Chain(this.val.slice(0, Math.max(0, this.val.length - num)))
   }
 
   take(num: number): Chain<T> {
@@ -260,6 +270,7 @@ export class Chain<T> implements Iterable<T> {
   }
 
   takeLast(num: number): Chain<T> {
+    if (num === 0) return new Chain([])
     return new Chain(this.val.slice(-num))
   }
 
@@ -312,15 +323,14 @@ export class Chain<T> implements Iterable<T> {
     return new Chain(filtered)
   }
 
-  async filterAsync(
+  filterAsync(
     predicate: (
       el: T,
       index: number,
       array: ReadonlyArray<T>,
     ) => Promise<boolean>,
-  ): Promise<Chain<T>> {
-    const includes = await this.mapAsync(predicate)
-    return this.filter((_, index) => includes.val[index])
+  ): AsyncChain<T> {
+    return this.async().filter(predicate)
   }
 
   filterNotNullish(): Chain<NonNullable<T>> {
@@ -397,16 +407,7 @@ export class Chain<T> implements Iterable<T> {
   groupBy<K extends string | symbol | number>(
     selector: (el: T) => K,
   ): ObjectChain<K, ReadonlyArray<T>> {
-    const record = {} as Record<K, Array<T>>
-    for (const el of this.val) {
-      const key = selector(el)
-      if (record[key] != null) {
-        record[key]?.push(el)
-      } else {
-        record[key] = [el]
-      }
-    }
-    return new ObjectChain(record)
+    return groupEntries(this.val.map((el) => [selector(el), el] as const))
   }
 
   indexOf(searchElement: T, fromIndex?: number): number | undefined {
@@ -459,11 +460,10 @@ export class Chain<T> implements Iterable<T> {
     return new Chain(mapped)
   }
 
-  async mapAsync<U>(
+  mapAsync<U>(
     transformer: (el: T, index: number, array: ReadonlyArray<T>) => Promise<U>,
-  ): Promise<Chain<U>> {
-    const ret = await Promise.all(this.val.map(transformer))
-    return new Chain(ret)
+  ): AsyncChain<U> {
+    return this.async().map(transformer)
   }
 
   mapNotNullish<O>(transformer: (el: T) => O): Chain<NonNullable<O>> {
@@ -572,9 +572,14 @@ export class Chain<T> implements Iterable<T> {
       index: number,
       array: ReadonlyArray<T>,
     ) => O,
-    initial?: O,
+    ...initial: [] | [O]
   ): O {
-    return this.val.reduce<O>(reducer, initial as O)
+    // an explicit `undefined`/`null` initial value is still an initial value
+    return initial.length
+      ? this.val.reduce<O>(reducer, initial[0])
+      : (this.val.reduce(
+          reducer as unknown as (a: T, b: T) => T,
+        ) as unknown as O)
   }
 
   reduceRight(
@@ -610,9 +615,13 @@ export class Chain<T> implements Iterable<T> {
       index: number,
       array: ReadonlyArray<T>,
     ) => O,
-    initial?: O,
+    ...initial: [] | [O]
   ): O {
-    return this.val.reduceRight<O>(reducer, initial as O)
+    return initial.length
+      ? this.val.reduceRight<O>(reducer, initial[0])
+      : (this.val.reduceRight(
+          reducer as unknown as (a: T, b: T) => T,
+        ) as unknown as O)
   }
 
   reverse(): Chain<T> {
@@ -653,6 +662,7 @@ export class Chain<T> implements Iterable<T> {
   sortBy(selector: (el: T) => bigint): Chain<T>
   sortBy(selector: (el: T) => string): Chain<T>
   sortBy(selector: (el: T) => number): Chain<T>
+  sortBy(selector: (el: T) => Date | bigint | string | number): Chain<T>
   sortBy(selector: (el: T) => Date | bigint | string | number): Chain<T> {
     // this is safe, because sortBy is overloaded as well
     const ret = sortBy(this.val, selector as (el: T) => number)
