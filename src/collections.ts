@@ -30,6 +30,7 @@ import {
 } from "@opencreek/deno-std-collections"
 import { error } from "."
 import { AsyncChain, asyncChain } from "./collections/AsyncChain"
+import { groupEntries } from "./collections/groupEntries"
 
 export type PairSplit<T> = T extends [infer F, infer L]
   ? [Chain<F>, Chain<L>]
@@ -260,7 +261,8 @@ export class Chain<T> implements Iterable<T> {
   }
 
   dropLast(num: number): Chain<T> {
-    return new Chain(this.val.slice(0, -num))
+    // slice(0, -0) would be empty
+    return new Chain(this.val.slice(0, Math.max(0, this.val.length - num)))
   }
 
   take(num: number): Chain<T> {
@@ -405,16 +407,7 @@ export class Chain<T> implements Iterable<T> {
   groupBy<K extends string | symbol | number>(
     selector: (el: T) => K,
   ): ObjectChain<K, ReadonlyArray<T>> {
-    const record = {} as Record<K, Array<T>>
-    for (const el of this.val) {
-      const key = selector(el)
-      if (record[key] != null) {
-        record[key]?.push(el)
-      } else {
-        record[key] = [el]
-      }
-    }
-    return new ObjectChain(record)
+    return groupEntries(this.val.map((el) => [selector(el), el] as const))
   }
 
   indexOf(searchElement: T, fromIndex?: number): number | undefined {
@@ -579,9 +572,14 @@ export class Chain<T> implements Iterable<T> {
       index: number,
       array: ReadonlyArray<T>,
     ) => O,
-    initial?: O,
+    ...initial: [] | [O]
   ): O {
-    return this.val.reduce<O>(reducer, initial as O)
+    // an explicit `undefined`/`null` initial value is still an initial value
+    return initial.length
+      ? this.val.reduce<O>(reducer, initial[0])
+      : (this.val.reduce(
+          reducer as unknown as (a: T, b: T) => T,
+        ) as unknown as O)
   }
 
   reduceRight(
@@ -617,9 +615,13 @@ export class Chain<T> implements Iterable<T> {
       index: number,
       array: ReadonlyArray<T>,
     ) => O,
-    initial?: O,
+    ...initial: [] | [O]
   ): O {
-    return this.val.reduceRight<O>(reducer, initial as O)
+    return initial.length
+      ? this.val.reduceRight<O>(reducer, initial[0])
+      : (this.val.reduceRight(
+          reducer as unknown as (a: T, b: T) => T,
+        ) as unknown as O)
   }
 
   reverse(): Chain<T> {

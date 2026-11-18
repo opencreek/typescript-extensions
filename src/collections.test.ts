@@ -220,3 +220,51 @@ function testTouchedType<
   }
   return false
 }
+
+test("dropLast should handle 0, n and n > length", (t) => {
+  const c = chain([1, 2, 3])
+
+  t.deepEqual(c.dropLast(0).value(), [1, 2, 3])
+  t.deepEqual(c.dropLast(1).value(), [1, 2])
+  t.deepEqual(c.dropLast(10).value(), [])
+})
+
+test("groupBy should handle keys that exist on Object.prototype", (t) => {
+  const keys = ["toString", "constructor", "__proto__", "mapValues", "a"]
+  const result = chain([...keys, ...keys])
+    .groupBy((it) => it)
+    .mapValues((it) => it.length)
+    .value()
+
+  t.is(Object.getPrototypeOf(result), Object.prototype)
+  t.deepEqual(
+    Object.entries(result),
+    keys.map((it) => [it, 2]),
+  )
+})
+
+test("reduce without initial should behave like Array.reduce", (t) => {
+  t.is(
+    chain([1, 2, 3]).reduce((acc, it) => acc + it),
+    6,
+  )
+  t.throws(() => chain<number>([]).reduce((acc, it) => acc + it), {
+    instanceOf: TypeError,
+  })
+  t.is(
+    chain(["a", "b"]).reduceRight((acc, it) => acc + it),
+    "ba",
+  )
+})
+
+test("reduce should respect an explicit undefined or null initial value", (t) => {
+  const seen: unknown[] = []
+  const reducer = (acc: number | null | undefined, it: number) => {
+    seen.push(acc)
+    return it
+  }
+
+  t.is(chain([1, 2]).reduce<number | undefined>(reducer, undefined), 2)
+  t.is(chain([1, 2]).reduceRight<number | null>(reducer, null), 1)
+  t.deepEqual(seen, [undefined, 1, null, 2])
+})
