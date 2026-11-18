@@ -2578,9 +2578,8 @@ test("AsyncObjectChain rejections should propagate through keys, values, entries
     mapKeys: () => o().mapKeys(async (k) => (k === "b" ? error("b!") : k)),
     mapValues: () => o().mapValues(async (v) => (v === 2 ? error("b!") : v)),
     mapEntries: () =>
-      o().mapEntries(
-        async (k, v): Promise<[string, number]> =>
-          k === "b" ? error("b!") : [k, v],
+      o().mapEntries(async (k, v): Promise<[string, number]> =>
+        k === "b" ? error("b!") : [k, v],
       ),
     filterKeys: () => o().filterKeys(async (k) => k === "b" && error("b!")),
     filterValues: () => o().filterValues(async (v) => v === 2 && error("b!")),

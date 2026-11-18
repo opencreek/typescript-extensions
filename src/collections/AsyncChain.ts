@@ -92,22 +92,16 @@ abstract class Lazy<V> implements Promise<V> {
 
   then<TResult1 = V, TResult2 = never>(
     onfulfilled?:
-      | ((value: V) => TResult1 | PromiseLike<TResult1>)
-      | null
-      | undefined,
+      ((value: V) => TResult1 | PromiseLike<TResult1>) | null | undefined,
     onrejected?:
-      | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-      | null
-      | undefined,
+      ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined,
   ): Promise<TResult1 | TResult2> {
     return this.await().then(onfulfilled, onrejected)
   }
 
   catch<TResult = never>(
     onrejected?:
-      | ((reason: any) => TResult | PromiseLike<TResult>)
-      | null
-      | undefined,
+      ((reason: any) => TResult | PromiseLike<TResult>) | null | undefined,
   ): Promise<V | TResult> {
     return this.await().catch(onrejected)
   }
