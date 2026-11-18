@@ -32,6 +32,28 @@ function testUnnecessary(
   }
 }
 
+test("BigDecimal parsing", (t) => {
+  const passes = new BigDecimal("1.1")
+  t.is(passes.toString(), "1.1")
+  t.is(passes.scale(), 1)
+  t.is(passes.unscaledValue(), 11n)
+
+  let e = t.throws(() => new BigDecimal("1.1.1"))
+  t.snapshot(e, "too many decimal places")
+  e = t.throws(() => new BigDecimal("1.1e1"))
+  t.snapshot(e, "weird exponential notation")
+  e = t.throws(() => new BigDecimal("1.1e10"))
+  t.snapshot(e, "normal exponential notation")
+  e = t.throws(() => new BigDecimal("1.1e"))
+  t.snapshot(e, "other weird exponential notation")
+  e = t.throws(() => new BigDecimal("1.1e1.1"))
+  t.snapshot(e, "super weird exponential notation")
+  e = t.throws(() => new BigDecimal("abcd"))
+  t.snapshot(e, "not a number")
+  e = t.throws(() => new BigDecimal("zxy"))
+  t.snapshot(e, "another not a number")
+})
+
 test("BigDecimal rounding", (t) => {
   testRounding(t, "5.5", "6", {
     precision: 0,

@@ -93,10 +93,21 @@ export class BigDecimal {
     }
 
     // split into integer and decimal parts
-    const [integer, decimal] = str.split(".")
+    const [integer, decimal, ...rest] = str.split(".")
+    if (rest.length > 0) {
+      error("BigDecimal: multiple decimal points found")
+    }
 
     // The unscaled value is the integer part followed by the decimal part
-    this.#value = BigInt(`${integer}${decimal ?? ""}`)
+    try {
+      this.#value = BigInt(`${integer}${decimal ?? ""}`)
+    } catch (e) {
+      if (e instanceof SyntaxError) {
+        error("BigDecimal: not a number")
+      }
+
+      throw e
+    }
     // The initial scale is either given (needed for certain math operations) or the length of the decimal part
     this.#scale = scale ?? decimal?.length ?? 0
 
